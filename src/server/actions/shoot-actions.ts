@@ -92,13 +92,14 @@ export async function createShoot(formData: FormData) {
     }
 
     revalidatePath("/dashboard/shoots");
-    redirect("/dashboard/shoots");
   } catch (error) {
     console.error("Error creating shoot:", error);
     throw new Error(
       error instanceof Error ? error.message : "Failed to create shoot",
     );
   }
+
+  redirect("/dashboard/shoots");
 }
 
 export async function getShoots() {

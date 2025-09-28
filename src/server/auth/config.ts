@@ -1,4 +1,3 @@
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import { type DefaultSession, type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
@@ -21,6 +20,13 @@ declare module "next-auth" {
   }
 
   interface User {
+    role: string;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
     role: string;
   }
 }
@@ -68,21 +74,27 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-  adapter: PrismaAdapter(db) as any,
+  // Using JWT strategy, no adapter needed
   session: {
-    strategy: "database",
+    strategy: "jwt",
   },
   pages: {
     signIn: "/auth/signin",
   },
   callbacks: {
-    session: ({ session, user }) => ({
+    jwt: ({ token, user }) => {
+      if (user) {
+        token.id = user.id;
+        token.role = user.role || "admin";
+      }
+      return token;
+    },
+    session: ({ session, token }) => ({
       ...session,
       user: {
         ...session.user,
-        id: user.id,
-        role: user.role || "admin",
+        id: token.id as string,
+        role: token.role as string,
       },
     }),
   },
