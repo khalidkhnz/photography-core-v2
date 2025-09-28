@@ -62,10 +62,10 @@ export default function SignUpPage() {
           router.push("/auth/signin");
         }, 2000);
       } else {
-        const data = await response.json();
-        setError(data.error || "An error occurred");
+        const data = (await response.json()) as { error?: string };
+        setError(data.error ?? "An error occurred");
       }
-    } catch (error) {
+    } catch {
       setError("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);

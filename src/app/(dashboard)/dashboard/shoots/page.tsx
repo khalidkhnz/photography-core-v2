@@ -22,7 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Plus, Calendar, MapPin, Users } from "lucide-react";
+import { MoreHorizontal, Plus, Calendar, MapPin } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 

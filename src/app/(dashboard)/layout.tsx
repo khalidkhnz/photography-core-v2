@@ -1,4 +1,4 @@
-import { auth } from "@/server/auth";
+import { auth } from "@/server/auth/server";
 import { redirect } from "next/navigation";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { DashboardHeader } from "@/components/dashboard-header";

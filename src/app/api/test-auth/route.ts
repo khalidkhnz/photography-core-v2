@@ -1,4 +1,4 @@
-import { auth } from "@/server/auth";
+import { auth } from "@/server/auth/server";
 import { NextResponse } from "next/server";
 
 export async function GET() {

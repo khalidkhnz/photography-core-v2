@@ -79,8 +79,7 @@ export function DashboardSidebar() {
         {navigation.map((item) => {
           const isActive =
             pathname === item.href ||
-            (item.children &&
-              item.children.some((child) => pathname === child.href));
+            item.children?.some((child) => pathname === child.href);
 
           return (
             <div key={item.name}>

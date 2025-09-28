@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/server/db";
@@ -11,7 +11,7 @@ const registerSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = (await request.json()) as unknown;
     const { name, email, password } = registerSchema.parse(body);
 
     // Check if user already exists
@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
     });
 
     // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
+    const { password: _password, ...userWithoutPassword } = user;
+    void _password; // Mark as used to avoid lint warning
 
     return NextResponse.json(
       { message: "User created successfully", user: userWithoutPassword },
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: error.issues[0]?.message || "Validation error" },
+        { error: error.issues[0]?.message ?? "Validation error" },
         { status: 400 },
       );
     }

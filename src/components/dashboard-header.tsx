@@ -29,14 +29,14 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
       ?.split(" ")
       .map((n) => n[0])
       .join("")
-      .toUpperCase() || "U";
+      .toUpperCase() ?? "U";
 
   return (
     <header className="bg-background flex h-16 items-center justify-between border-b px-6">
       <div>
         <h2 className="text-foreground text-2xl font-semibold">Dashboard</h2>
         <p className="text-muted-foreground text-sm">
-          Welcome back, {user.name || user.email}
+          Welcome back, {user.name ?? user.email}
         </p>
       </div>
 
@@ -45,7 +45,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user.image || ""} alt={user.name || ""} />
+                <AvatarImage src={user.image ?? ""} alt={user.name ?? ""} />
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
             </Button>
