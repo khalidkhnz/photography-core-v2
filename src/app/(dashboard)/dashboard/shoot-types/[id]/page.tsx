@@ -16,9 +16,10 @@ import { notFound } from "next/navigation";
 export default async function ViewShootTypePage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const shootType = await getShootTypeById(params.id);
+  const { id } = await params;
+  const shootType = await getShootTypeById(id);
 
   if (!shootType) {
     notFound();
@@ -43,7 +44,7 @@ export default async function ViewShootTypePage({
           </div>
         </div>
         <Button asChild>
-          <Link href={`/dashboard/shoot-types/${shootType.id}/edit`}>
+          <Link href={`/dashboard/shoot-types/${id}/edit`}>
             <Edit className="mr-2 h-4 w-4" />
             Edit Shoot Type
           </Link>

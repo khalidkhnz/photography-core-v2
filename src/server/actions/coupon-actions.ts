@@ -10,9 +10,7 @@ const createCouponSchema = z.object({
     .min(1, "Code is required")
     .max(20, "Code must be 20 characters or less"),
   description: z.string().optional(),
-  type: z.enum(["percentage", "fixed"], {
-    required_error: "Type is required",
-  }),
+  type: z.enum(["percentage", "fixed"]),
   value: z.number().min(0, "Value must be positive"),
   minAmount: z.number().min(0, "Minimum amount must be positive").optional(),
   maxUses: z.number().min(1, "Max uses must be at least 1").optional(),

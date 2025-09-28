@@ -41,8 +41,16 @@ const updateEditorSchema = z.object({
 
 type UpdateEditorFormData = z.infer<typeof updateEditorSchema>;
 
-export default function EditEditorPage({ params }: { params: { id: string } }) {
-  const editorId = params.id;
+export default function EditEditorPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const [editorId, setEditorId] = useState<string>("");
+
+  useEffect(() => {
+    params.then(({ id }) => setEditorId(id));
+  }, [params]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [specialties, setSpecialties] = useState<string[]>([]);
@@ -50,7 +58,7 @@ export default function EditEditorPage({ params }: { params: { id: string } }) {
   const [dataLoading, setDataLoading] = useState(true);
   const router = useRouter();
 
-  const form = useForm<UpdateEditorFormData>({
+  const form = useForm({
     resolver: zodResolver(updateEditorSchema),
     defaultValues: {
       name: "",

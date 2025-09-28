@@ -46,9 +46,13 @@ type UpdateShootTypeFormData = z.infer<typeof updateShootTypeSchema>;
 export default function EditShootTypePage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const shootTypeId = params.id;
+  const [shootTypeId, setShootTypeId] = useState<string>("");
+
+  useEffect(() => {
+    params.then(({ id }) => setShootTypeId(id));
+  }, [params]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [dataLoading, setDataLoading] = useState(true);

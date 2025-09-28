@@ -47,9 +47,13 @@ type UpdatePhotographerFormData = z.infer<typeof updatePhotographerSchema>;
 export default function EditPhotographerPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const photographerId = params.id;
+  const [photographerId, setPhotographerId] = useState<string>("");
+
+  useEffect(() => {
+    params.then(({ id }) => setPhotographerId(id));
+  }, [params]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [specialties, setSpecialties] = useState<string[]>([]);
@@ -57,7 +61,7 @@ export default function EditPhotographerPage({
   const [dataLoading, setDataLoading] = useState(true);
   const router = useRouter();
 
-  const form = useForm<UpdatePhotographerFormData>({
+  const form = useForm({
     resolver: zodResolver(updatePhotographerSchema),
     defaultValues: {
       name: "",

@@ -24,11 +24,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 interface EditCouponPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function EditCouponPage({ params }: EditCouponPageProps) {
-  const coupon = await getCouponById(params.id);
+  const { id } = await params;
+  const coupon = await getCouponById(id);
 
   if (!coupon) {
     notFound();
@@ -38,7 +39,7 @@ export default async function EditCouponPage({ params }: EditCouponPageProps) {
     <div className="space-y-6">
       <div className="flex items-center space-x-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link href={`/dashboard/coupons/${params.id}`}>
+          <Link href={`/dashboard/coupons/${id}`}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
@@ -59,7 +60,7 @@ export default async function EditCouponPage({ params }: EditCouponPageProps) {
         </CardHeader>
         <CardContent>
           <form
-            action={(formData) => updateCouponAction(params.id, formData)}
+            action={(formData) => updateCouponAction(id, formData)}
             className="space-y-6"
           >
             <div className="grid gap-4 md:grid-cols-2">
@@ -195,7 +196,7 @@ export default async function EditCouponPage({ params }: EditCouponPageProps) {
 
             <div className="flex justify-end space-x-2">
               <Button type="button" variant="outline" asChild>
-                <Link href={`/dashboard/coupons/${params.id}`}>Cancel</Link>
+                <Link href={`/dashboard/coupons/${id}`}>Cancel</Link>
               </Button>
               <Button type="submit">
                 <Save className="mr-2 h-4 w-4" />

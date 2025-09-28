@@ -46,7 +46,7 @@ export default function CreateEditorPage() {
   const [newSpecialty, setNewSpecialty] = useState("");
   const router = useRouter();
 
-  const form = useForm<CreateEditorFormData>({
+  const form = useForm({
     resolver: zodResolver(createEditorSchema),
     defaultValues: {
       name: "",

@@ -46,7 +46,7 @@ export default function CreatePhotographerPage() {
   const [newSpecialty, setNewSpecialty] = useState("");
   const router = useRouter();
 
-  const form = useForm<CreatePhotographerFormData>({
+  const form = useForm({
     resolver: zodResolver(createPhotographerSchema),
     defaultValues: {
       name: "",

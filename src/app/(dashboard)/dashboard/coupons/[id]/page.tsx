@@ -25,9 +25,10 @@ import { notFound } from "next/navigation";
 export default async function ViewCouponPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const coupon = await getCouponById(params.id);
+  const { id } = await params;
+  const coupon = await getCouponById(id);
 
   if (!coupon) {
     notFound();
@@ -57,7 +58,7 @@ export default async function ViewCouponPage({
           </div>
         </div>
         <Button asChild>
-          <Link href={`/dashboard/coupons/${coupon.id}/edit`}>
+          <Link href={`/dashboard/coupons/${id}/edit`}>
             <Edit className="mr-2 h-4 w-4" />
             Edit Coupon
           </Link>
@@ -261,7 +262,7 @@ export default async function ViewCouponPage({
                 className="w-full justify-start"
                 asChild
               >
-                <Link href={`/dashboard/coupons/${coupon.id}/edit`}>
+                <Link href={`/dashboard/coupons/${id}/edit`}>
                   <Edit className="mr-2 h-4 w-4" />
                   Edit Coupon
                 </Link>

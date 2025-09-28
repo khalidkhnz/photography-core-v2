@@ -24,9 +24,10 @@ import { notFound } from "next/navigation";
 export default async function ViewPhotographerPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const photographer = await getPhotographerById(params.id);
+  const { id } = await params;
+  const photographer = await getPhotographerById(id);
 
   if (!photographer) {
     notFound();
@@ -51,7 +52,7 @@ export default async function ViewPhotographerPage({
           </div>
         </div>
         <Button asChild>
-          <Link href={`/dashboard/photographers/${photographer.id}/edit`}>
+          <Link href={`/dashboard/photographers/${id}/edit`}>
             <Edit className="mr-2 h-4 w-4" />
             Edit Photographer
           </Link>

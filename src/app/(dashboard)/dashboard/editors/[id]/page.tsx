@@ -24,9 +24,10 @@ import { notFound } from "next/navigation";
 export default async function ViewEditorPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const editor = await getEditorById(params.id);
+  const { id } = await params;
+  const editor = await getEditorById(id);
 
   if (!editor) {
     notFound();
@@ -49,7 +50,7 @@ export default async function ViewEditorPage({
           </div>
         </div>
         <Button asChild>
-          <Link href={`/dashboard/editors/${editor.id}/edit`}>
+          <Link href={`/dashboard/editors/${id}/edit`}>
             <Edit className="mr-2 h-4 w-4" />
             Edit Editor
           </Link>
