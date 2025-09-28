@@ -66,7 +66,10 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
       else if (segments[i] === "edit") label = "Edit";
       else if (segments[i] === "view") label = "View";
       else if (!isNaN(Number(segments[i]))) label = `#${segments[i]}`;
-      else label = segments[i].charAt(0).toUpperCase() + segments[i].slice(1);
+      else
+        label =
+          (segments?.[i]?.charAt?.(0)?.toUpperCase() ?? "") +
+          (segments?.[i]?.slice?.(1) ?? "");
 
       breadcrumbs.push({
         label,
