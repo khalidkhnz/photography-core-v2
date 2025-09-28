@@ -14,16 +14,144 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
+// Photography Core Models
+
+model Client {
+    id        String   @id @default(cuid())
     name      String
+    email     String?  @unique
+    phone     String?
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    createdBy   User   @relation(fields: [createdById], references: [id])
-    createdById String
+    shoots    Shoot[]
 
     @@index([name])
+}
+
+model ShootType {
+    id          String   @id @default(cuid())
+    name        String   @unique
+    code        String   @unique // RE, DR, EV, VT, PC
+    description String?
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    shoots      Shoot[]
+
+    @@index([name])
+    @@index([code])
+}
+
+model Location {
+    id          String   @id @default(cuid())
+    name        String   @unique
+    address     String?
+    city        String?
+    state       String?
+    country     String?
+    coordinates String? // For storing lat/lng
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    shoots      Shoot[]
+
+    @@index([city])
+}
+
+model Photographer {
+    id          String   @id @default(cuid())
+    name        String
+    email       String?  @unique
+    phone       String?
+    specialties String[] // Array of expertise areas
+    rating      Float?   @default(0)
+    isActive    Boolean  @default(true)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    shootPhotographers ShootPhotographer[]
+
+    @@index([name])
+    @@index([isActive])
+}
+
+model Editor {
+    id          String   @id @default(cuid())
+    name        String
+    email       String?  @unique
+    phone       String?
+    specialties String[] // Array of expertise areas
+    rating      Float?   @default(0)
+    isActive    Boolean  @default(true)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    shootEditors ShootEditor[]
+
+    @@index([name])
+    @@index([isActive])
+}
+
+model Shoot {
+    id                    String   @id @default(cuid())
+    shootId               String   @unique // Custom shoot ID (e.g., RE-2024-001)
+    clientId              String
+    shootTypeId           String
+    locationId            String?
+    overallDeliverables   String?
+    shootStartDate        DateTime?
+    shootEndDate          DateTime?
+    photographerNotes     String?
+    editorNotes           String?
+    status                String   @default("planned") // planned, in_progress, completed, cancelled
+    createdAt             DateTime @default(now())
+    updatedAt             DateTime @updatedAt
+
+    client                Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+    shootType             ShootType @relation(fields: [shootTypeId], references: [id])
+    location              Location? @relation(fields: [locationId], references: [id])
+    
+    shootPhotographers    ShootPhotographer[]
+    shootEditors          ShootEditor[]
+
+    @@index([shootId])
+    @@index([clientId])
+    @@index([shootTypeId])
+    @@index([status])
+    @@index([shootStartDate])
+}
+
+// Junction table for many-to-many relationship between shoots and photographers
+model ShootPhotographer {
+    id             String       @id @default(cuid())
+    shootId        String
+    photographerId String
+    role           String?      // Lead, Assistant, etc.
+    assignedAt     DateTime     @default(now())
+
+    shoot          Shoot        @relation(fields: [shootId], references: [id], onDelete: Cascade)
+    photographer   Photographer @relation(fields: [photographerId], references: [id], onDelete: Cascade)
+
+    @@unique([shootId, photographerId])
+    @@index([shootId])
+    @@index([photographerId])
+}
+
+// Junction table for many-to-many relationship between shoots and editors
+model ShootEditor {
+    id        String   @id @default(cuid())
+    shootId   String
+    editorId  String
+    role      String?  // Lead, Assistant, etc.
+    assignedAt DateTime @default(now())
+
+    shoot     Shoot    @relation(fields: [shootId], references: [id], onDelete: Cascade)
+    editor    Editor   @relation(fields: [editorId], references: [id], onDelete: Cascade)
+
+    @@unique([shootId, editorId])
+    @@index([shootId])
+    @@index([editorId])
 }
 
 // Necessary for Next auth
@@ -60,9 +188,10 @@ model User {
     email         String?   @unique
     emailVerified DateTime?
     image         String?
+    password      String?   // For email/password authentication
+    role          String    @default("admin") // For future RBAC implementation
     accounts      Account[]
     sessions      Session[]
-    posts         Post[]
 }
 
 model VerificationToken {
