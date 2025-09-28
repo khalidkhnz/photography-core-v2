@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import Image from "next/image";
+import Assets from "@/assets/assets";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,9 +53,18 @@ export default function SignInPage() {
     <div className="bg-background flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
+          <div className="mb-4 flex justify-center">
+            <Image
+              src={Assets.LOGO}
+              alt="Photography Core"
+              width={120}
+              height={40}
+              className="h-10 w-auto"
+            />
+          </div>
           <CardTitle className="text-center text-2xl">Sign In</CardTitle>
           <CardDescription className="text-center">
-            Enter your credentials to access Photography Core
+            Enter your credentials to access your account
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -91,7 +101,7 @@ export default function SignInPage() {
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
-            <div className="text-muted-foreground text-center text-sm">
+            {/* <div className="text-muted-foreground text-center text-sm">
               Don&apos;t have an account?{" "}
               <Link
                 href="/auth/signup"
@@ -99,7 +109,7 @@ export default function SignInPage() {
               >
                 Sign up
               </Link>
-            </div>
+            </div> */}
           </CardFooter>
         </form>
       </Card>

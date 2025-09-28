@@ -5,7 +5,7 @@ import { Geist } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
-  title: "Photography Core",
+  title: "BookThatStudio - Photography Core",
   description: "Central nucleus for photography operations",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };

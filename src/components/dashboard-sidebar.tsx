@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ToggleDarkLightMode } from "@/components/toggle-dark-light-mode";
+import Image from "next/image";
+import Assets from "@/assets/assets";
 import {
   Camera,
   Users,
@@ -76,10 +78,14 @@ export function DashboardSidebar() {
 
   return (
     <div className="bg-card flex h-full w-64 flex-col border-r">
-      <div className="flex h-16 items-center border-b px-6">
-        <h1 className="text-foreground text-xl font-semibold">
-          Photography Core
-        </h1>
+      <div className="flex h-16 items-center justify-center border-b px-6">
+        <Image
+          src={Assets.LOGO}
+          alt="Photography Core"
+          width={160}
+          height={48}
+          className="h-12 w-auto"
+        />
       </div>
 
       <nav className="flex-1 space-y-1 p-4">
