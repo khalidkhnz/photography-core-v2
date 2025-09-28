@@ -89,7 +89,7 @@ export async function createShoot(formData: FormData) {
           : undefined,
         photographerNotes: validatedData.photographerNotes,
         editorNotes: validatedData.editorNotes,
-        status: "Pending",
+        status: "planned",
       },
     });
 
@@ -235,6 +235,27 @@ export async function updateShoot(id: string, formData: FormData) {
     throw new Error(
       error instanceof Error ? error.message : "Failed to update shoot",
     );
+  }
+}
+
+export async function updateShootStatus(id: string, status: string) {
+  try {
+    const validStatuses = ["planned", "in_progress", "completed", "cancelled"];
+
+    if (!validStatuses.includes(status)) {
+      throw new Error("Invalid status");
+    }
+
+    await db.shoot.update({
+      where: { id },
+      data: { status },
+    });
+
+    revalidatePath("/dashboard/shoots");
+    revalidatePath(`/dashboard/shoots/${id}`);
+  } catch (error) {
+    console.error("Error updating shoot status:", error);
+    throw new Error("Failed to update shoot status");
   }
 }
 

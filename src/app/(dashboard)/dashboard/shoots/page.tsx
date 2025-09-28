@@ -1,4 +1,8 @@
-import { getShoots, deleteShoot } from "@/server/actions/shoot-actions";
+import {
+  getShoots,
+  deleteShoot,
+  updateShootStatus,
+} from "@/server/actions/shoot-actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,6 +12,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -135,9 +146,25 @@ export default async function ShootsPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(shoot.status)}>
-                        {shoot.status.replace("_", " ")}
-                      </Badge>
+                      <Select
+                        value={shoot.status}
+                        onValueChange={async (newStatus) => {
+                          "use server";
+                          await updateShootStatus(shoot.id, newStatus);
+                        }}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="planned">Planned</SelectItem>
+                          <SelectItem value="in_progress">
+                            In Progress
+                          </SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>

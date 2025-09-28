@@ -49,6 +49,50 @@ export async function getShootTypes() {
   }
 }
 
+export async function getShootTypeById(id: string) {
+  try {
+    const shootType = await db.shootType.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: {
+            shoots: true,
+          },
+        },
+      },
+    });
+    return shootType;
+  } catch (error) {
+    console.error(`Error fetching shoot type with ID ${id}:`, error);
+    return null;
+  }
+}
+
+export async function updateShootType(id: string, formData: FormData) {
+  try {
+    const rawData = {
+      name: formData.get("name") as string,
+      code: (formData.get("code") as string) || undefined,
+      description: (formData.get("description") as string) || undefined,
+    };
+
+    const validatedData = createShootTypeSchema.parse(rawData);
+
+    const shootType = await db.shootType.update({
+      where: { id },
+      data: validatedData,
+    });
+
+    revalidatePath("/dashboard/shoot-types");
+    return shootType;
+  } catch (error) {
+    console.error("Error updating shoot type:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to update shoot type",
+    );
+  }
+}
+
 export async function deleteShootType(id: string) {
   try {
     await db.shootType.delete({

@@ -1,5 +1,15 @@
-import { getShootById } from "@/server/actions/shoot-actions";
+import {
+  getShootById,
+  updateShootStatus,
+} from "@/server/actions/shoot-actions";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -35,10 +45,12 @@ export default async function ViewShootPage({ params }: PageProps) {
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
+      case "planned":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
+      case "in_progress":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
       case "completed":
         return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      case "in_progress":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
       case "cancelled":
         return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
       default:
@@ -92,9 +104,23 @@ export default async function ViewShootPage({ params }: PageProps) {
                 </div>
                 <div>
                   <p className="text-sm font-medium">Status</p>
-                  <Badge className={getStatusColor(shoot.status)}>
-                    {shoot.status}
-                  </Badge>
+                  <Select
+                    value={shoot.status}
+                    onValueChange={async (newStatus) => {
+                      "use server";
+                      await updateShootStatus(shoot.id, newStatus);
+                    }}
+                  >
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="planned">Planned</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <p className="text-sm font-medium">Client</p>

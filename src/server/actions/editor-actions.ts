@@ -52,6 +52,56 @@ export async function getEditors() {
   }
 }
 
+export async function getEditorById(id: string) {
+  try {
+    const editor = await db.editor.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: {
+            shoots: true,
+          },
+        },
+      },
+    });
+    return editor;
+  } catch (error) {
+    console.error(`Error fetching editor with ID ${id}:`, error);
+    return null;
+  }
+}
+
+export async function updateEditor(id: string, formData: FormData) {
+  try {
+    const rawData = {
+      name: formData.get("name") as string,
+      email: (formData.get("email") as string) || undefined,
+      phone: (formData.get("phone") as string) || undefined,
+      specialties: formData.get("specialties") as string,
+      rating: formData.get("rating") as string,
+      isActive: formData.get("isActive") as string,
+    };
+
+    const validatedData = createEditorSchema.parse({
+      ...rawData,
+      specialties: rawData.specialties ? JSON.parse(rawData.specialties) : [],
+      rating: rawData.rating ? Number(rawData.rating) : 0,
+      isActive: rawData.isActive === "true",
+    });
+
+    const editor = await db.editor.update({
+      where: { id },
+      data: validatedData,
+    });
+
+    revalidatePath("/dashboard/editors");
+    return { success: true, editor };
+  } catch (error) {
+    console.error("Error updating editor:", error);
+    return { success: false, error: "Failed to update editor" };
+  }
+}
+
 export async function deleteEditor(id: string) {
   try {
     await db.editor.delete({

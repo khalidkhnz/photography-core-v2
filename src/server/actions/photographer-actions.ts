@@ -52,6 +52,56 @@ export async function getPhotographers() {
   }
 }
 
+export async function getPhotographerById(id: string) {
+  try {
+    const photographer = await db.photographer.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: {
+            shoots: true,
+          },
+        },
+      },
+    });
+    return photographer;
+  } catch (error) {
+    console.error(`Error fetching photographer with ID ${id}:`, error);
+    return null;
+  }
+}
+
+export async function updatePhotographer(id: string, formData: FormData) {
+  try {
+    const rawData = {
+      name: formData.get("name") as string,
+      email: (formData.get("email") as string) || undefined,
+      phone: (formData.get("phone") as string) || undefined,
+      specialties: formData.get("specialties") as string,
+      rating: formData.get("rating") as string,
+      isActive: formData.get("isActive") as string,
+    };
+
+    const validatedData = createPhotographerSchema.parse({
+      ...rawData,
+      specialties: rawData.specialties ? JSON.parse(rawData.specialties) : [],
+      rating: rawData.rating ? Number(rawData.rating) : 0,
+      isActive: rawData.isActive === "true",
+    });
+
+    const photographer = await db.photographer.update({
+      where: { id },
+      data: validatedData,
+    });
+
+    revalidatePath("/dashboard/photographers");
+    return { success: true, photographer };
+  } catch (error) {
+    console.error("Error updating photographer:", error);
+    return { success: false, error: "Failed to update photographer" };
+  }
+}
+
 export async function deletePhotographer(id: string) {
   try {
     await db.photographer.delete({
