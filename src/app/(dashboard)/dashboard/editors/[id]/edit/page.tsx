@@ -49,7 +49,7 @@ export default function EditEditorPage({
   const [editorId, setEditorId] = useState<string>("");
 
   useEffect(() => {
-    params.then(({ id }) => setEditorId(id));
+    void params.then(({ id }) => setEditorId(id));
   }, [params]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -82,13 +82,13 @@ export default function EditEditorPage({
 
         // Populate form with existing data
         form.setValue("name", editor.name);
-        form.setValue("email", editor.email || "");
-        form.setValue("phone", editor.phone || "");
-        form.setValue("specialties", editor.specialties || []);
-        form.setValue("rating", editor.rating || 0);
+        form.setValue("email", editor.email ?? "");
+        form.setValue("phone", editor.phone ?? "");
+        form.setValue("specialties", editor.specialties ?? []);
+        form.setValue("rating", editor.rating ?? 0);
         form.setValue("isActive", editor.isActive);
 
-        setSpecialties(editor.specialties || []);
+        setSpecialties(editor.specialties ?? []);
       } catch (error) {
         console.error("Error fetching editor:", error);
         setError("Failed to load editor data");
@@ -135,7 +135,7 @@ export default function EditEditorPage({
       if (result.success) {
         void router.push("/dashboard/editors");
       } else {
-        setError(result.error || "Failed to update editor");
+        setError(result.error ?? "Failed to update editor");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update editor");
@@ -171,7 +171,7 @@ export default function EditEditorPage({
         <CardHeader>
           <CardTitle>Editor Information</CardTitle>
           <CardDescription>
-            Update the editor's details and specialties
+            Update the editor&apos;s details and specialties
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

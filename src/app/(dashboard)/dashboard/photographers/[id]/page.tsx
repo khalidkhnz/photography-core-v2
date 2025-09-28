@@ -87,7 +87,7 @@ export default async function ViewPhotographerPage({
                 <div className="flex items-center space-x-1">
                   <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                   <span className="text-muted-foreground">
-                    {photographer.rating?.toFixed(1) || "0.0"}
+                    {photographer.rating?.toFixed(1) ?? "0.0"}
                   </span>
                 </div>
               </div>
@@ -161,7 +161,7 @@ export default async function ViewPhotographerPage({
             <CardHeader>
               <CardTitle>Work Statistics</CardTitle>
               <CardDescription>
-                Photographer's work history and performance.
+                Photographer&apos;s work history and performance.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -184,7 +184,7 @@ export default async function ViewPhotographerPage({
                   <div className="flex items-center space-x-1">
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                     <span className="text-sm">
-                      {photographer.rating?.toFixed(1) || "0.0"}
+                      {photographer.rating?.toFixed(1) ?? "0.0"}
                     </span>
                   </div>
                 </div>
@@ -204,7 +204,7 @@ export default async function ViewPhotographerPage({
 
               {photographer._count.shootPhotographers === 0 && (
                 <p className="text-muted-foreground mt-4 text-xs">
-                  This photographer hasn't been assigned to any shoots yet
+                  This photographer hasn&apos;t been assigned to any shoots yet
                 </p>
               )}
             </CardContent>

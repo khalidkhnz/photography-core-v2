@@ -84,7 +84,9 @@ export async function updateEditor(id: string, formData: FormData) {
 
     const validatedData = createEditorSchema.parse({
       ...rawData,
-      specialties: rawData.specialties ? JSON.parse(rawData.specialties) : [],
+      specialties: rawData.specialties
+        ? (JSON.parse(rawData.specialties) as string[])
+        : [],
       rating: rawData.rating ? Number(rawData.rating) : 0,
       isActive: rawData.isActive === "true",
     });

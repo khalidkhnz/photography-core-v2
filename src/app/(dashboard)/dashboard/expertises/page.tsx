@@ -95,7 +95,7 @@ export default function ExpertisesPage() {
               <Award className="text-muted-foreground mx-auto h-12 w-12" />
               <h3 className="text-lg font-semibold">No expertises found</h3>
               <p className="text-muted-foreground">
-                Add specializations to categorize your team's skills
+                Add specializations to categorize your team&apos;s skills
               </p>
               <Button className="mt-4">
                 <Plus className="mr-2 h-4 w-4" />

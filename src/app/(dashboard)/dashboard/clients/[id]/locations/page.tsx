@@ -123,7 +123,7 @@ export default async function ClientLocationsPage({ params }: PageProps) {
                     <CardTitle className="text-lg">{location.name}</CardTitle>
                     <CardDescription className="mt-1 flex items-center gap-2">
                       <Badge variant="outline">
-                        {location.city || "No city"}
+                        {location.city ?? "No city"}
                       </Badge>
                     </CardDescription>
                   </div>

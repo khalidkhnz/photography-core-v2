@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, MapPin, Phone, Mail } from "lucide-react";
+import { Plus, Edit, MapPin, Phone, Mail } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 

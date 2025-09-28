@@ -74,9 +74,9 @@ export default function EditClientPage({ params }: PageProps) {
 
         // Set form values
         form.setValue("name", clientData.name);
-        form.setValue("email", clientData.email || "");
-        form.setValue("phone", clientData.phone || "");
-        form.setValue("address", clientData.address || "");
+        form.setValue("email", clientData.email ?? "");
+        form.setValue("phone", clientData.phone ?? "");
+        form.setValue("address", clientData.address ?? "");
       } catch (error) {
         console.error("Error fetching client data:", error);
         setError("Failed to load client data");
@@ -145,7 +145,9 @@ export default function EditClientPage({ params }: PageProps) {
           <Card>
             <CardHeader>
               <CardTitle>Client Information</CardTitle>
-              <CardDescription>Update the client's details</CardDescription>
+              <CardDescription>
+                Update the client&apos;s details
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <FormField

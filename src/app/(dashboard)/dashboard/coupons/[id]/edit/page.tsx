@@ -97,7 +97,7 @@ export default async function EditCouponPage({ params }: EditCouponPageProps) {
               <Textarea
                 id="description"
                 name="description"
-                defaultValue={coupon.description || ""}
+                defaultValue={coupon.description ?? ""}
                 placeholder="Brief description of this coupon"
                 rows={3}
               />
@@ -128,7 +128,7 @@ export default async function EditCouponPage({ params }: EditCouponPageProps) {
                   type="number"
                   step="0.01"
                   min="0"
-                  defaultValue={coupon.minAmount || ""}
+                  defaultValue={coupon.minAmount ?? ""}
                 />
                 <p className="text-muted-foreground text-xs">
                   Minimum order amount to use this coupon
@@ -144,7 +144,7 @@ export default async function EditCouponPage({ params }: EditCouponPageProps) {
                   name="maxUses"
                   type="number"
                   min="1"
-                  defaultValue={coupon.maxUses || ""}
+                  defaultValue={coupon.maxUses ?? ""}
                 />
                 <p className="text-muted-foreground text-xs">
                   Leave empty for unlimited uses

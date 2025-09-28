@@ -1,11 +1,5 @@
 import { getCoupons, deleteCoupon } from "@/server/actions/coupon-actions";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -114,7 +108,7 @@ export default async function CouponsPage() {
                       <div className="flex items-center space-x-1">
                         <Tag className="h-4 w-4" />
                         <span>
-                          {coupon.usedCount}/{coupon.maxUses || "∞"} uses
+                          {coupon.usedCount}/{coupon.maxUses ?? "∞"} uses
                         </span>
                       </div>
                     </div>

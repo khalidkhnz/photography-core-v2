@@ -81,7 +81,7 @@ export default async function ViewEditorPage({
                 <div className="flex items-center space-x-1">
                   <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                   <span className="text-muted-foreground">
-                    {editor.rating?.toFixed(1) || "0.0"}
+                    {editor.rating?.toFixed(1) ?? "0.0"}
                   </span>
                 </div>
               </div>
@@ -153,7 +153,7 @@ export default async function ViewEditorPage({
             <CardHeader>
               <CardTitle>Work Statistics</CardTitle>
               <CardDescription>
-                Editor's work history and performance.
+                Editor&apos;s work history and performance.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -176,7 +176,7 @@ export default async function ViewEditorPage({
                   <div className="flex items-center space-x-1">
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                     <span className="text-sm">
-                      {editor.rating?.toFixed(1) || "0.0"}
+                      {editor.rating?.toFixed(1) ?? "0.0"}
                     </span>
                   </div>
                 </div>
@@ -194,7 +194,7 @@ export default async function ViewEditorPage({
 
               {editor._count.shootEditors === 0 && (
                 <p className="text-muted-foreground mt-4 text-xs">
-                  This editor hasn't been assigned to any shoots yet
+                  This editor hasn&apos;t been assigned to any shoots yet
                 </p>
               )}
             </CardContent>

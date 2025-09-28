@@ -53,7 +53,7 @@ export default async function ViewCouponPage({
               Coupon: {coupon.code}
             </h1>
             <p className="text-muted-foreground">
-              {coupon.description || "Discount coupon details"}
+              {coupon.description ?? "Discount coupon details"}
             </p>
           </div>
         </div>
@@ -147,7 +147,7 @@ export default async function ViewCouponPage({
                 <div>
                   <p className="text-sm font-medium">Usage</p>
                   <p className="text-muted-foreground">
-                    {coupon.usedCount}/{coupon.maxUses || "∞"} uses
+                    {coupon.usedCount}/{coupon.maxUses ?? "∞"} uses
                   </p>
                 </div>
               </div>

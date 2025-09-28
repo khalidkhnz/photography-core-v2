@@ -73,7 +73,7 @@ export default async function ViewShootTypePage({
               <div className="md:col-span-2">
                 <p className="text-sm font-medium">Description</p>
                 <p className="text-muted-foreground">
-                  {shootType.description || "No description provided"}
+                  {shootType.description ?? "No description provided"}
                 </p>
               </div>
               <div>

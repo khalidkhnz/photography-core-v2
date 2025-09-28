@@ -51,7 +51,7 @@ export default function EditShootTypePage({
   const [shootTypeId, setShootTypeId] = useState<string>("");
 
   useEffect(() => {
-    params.then(({ id }) => setShootTypeId(id));
+    void params.then(({ id }) => setShootTypeId(id));
   }, [params]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -80,7 +80,7 @@ export default function EditShootTypePage({
         // Populate form with existing data
         form.setValue("name", shootType.name);
         form.setValue("code", shootType.code);
-        form.setValue("description", shootType.description || "");
+        form.setValue("description", shootType.description ?? "");
       } catch (error) {
         console.error("Error fetching shoot type:", error);
         setError("Failed to load shoot type data");

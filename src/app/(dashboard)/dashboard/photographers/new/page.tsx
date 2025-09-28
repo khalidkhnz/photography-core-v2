@@ -8,7 +8,6 @@ import { createPhotographer } from "@/server/actions/photographer-actions";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -85,7 +84,7 @@ export default function CreatePhotographerPage() {
       formData.append("name", data.name);
       if (data.email) formData.append("email", data.email);
       if (data.phone) formData.append("phone", data.phone);
-      formData.append("specialties", JSON.stringify(data.specialties || []));
+      formData.append("specialties", JSON.stringify(data.specialties ?? []));
       formData.append("rating", data.rating.toString());
       formData.append("isActive", data.isActive.toString());
 

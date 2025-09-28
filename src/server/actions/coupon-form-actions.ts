@@ -9,7 +9,7 @@ export async function createCouponAction(formData: FormData) {
   if (result.success) {
     redirect("/dashboard/coupons");
   } else {
-    throw new Error(result.error || "Failed to create coupon");
+    throw new Error(result.error ?? "Failed to create coupon");
   }
 }
 
@@ -19,6 +19,6 @@ export async function updateCouponAction(id: string, formData: FormData) {
   if (result.success) {
     redirect(`/dashboard/coupons/${id}`);
   } else {
-    throw new Error(result.error || "Failed to update coupon");
+    throw new Error(result.error ?? "Failed to update coupon");
   }
 }

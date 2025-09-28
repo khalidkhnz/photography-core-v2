@@ -181,7 +181,7 @@ export async function updateShoot(id: string, formData: FormData) {
     const validatedData = createShootSchema.parse(rawData);
 
     // Update the shoot
-    const shoot = await db.shoot.update({
+    await db.shoot.update({
       where: { id },
       data: {
         clientId: validatedData.clientId,

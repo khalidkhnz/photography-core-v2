@@ -3,13 +3,7 @@ import {
   deleteShootType,
 } from "@/server/actions/shoot-type-actions";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Tag } from "lucide-react";
 import Link from "next/link";
@@ -91,7 +85,7 @@ export default async function ShootTypesPage() {
                       <Badge variant="outline">{shootType.code}</Badge>
                     </TableCell>
                     <TableCell className="max-w-xs truncate">
-                      {shootType.description || "No description"}
+                      {shootType.description ?? "No description"}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {format(new Date(shootType.createdAt), "MMM dd, yyyy")}

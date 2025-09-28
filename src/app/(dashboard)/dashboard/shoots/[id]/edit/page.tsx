@@ -147,10 +147,10 @@ export default function EditShootPage({ params }: PageProps) {
         // Set form values
         form.setValue("clientId", shootData.clientId);
         form.setValue("shootTypeId", shootData.shootTypeId);
-        form.setValue("locationId", shootData.locationId || "");
+        form.setValue("locationId", shootData.locationId ?? "");
         form.setValue(
           "overallDeliverables",
-          shootData.overallDeliverables || "",
+          shootData.overallDeliverables ?? "",
         );
         form.setValue(
           "shootStartDate",
@@ -164,8 +164,8 @@ export default function EditShootPage({ params }: PageProps) {
             ? new Date(shootData.shootEndDate).toISOString().slice(0, 16)
             : "",
         );
-        form.setValue("photographerNotes", shootData.photographerNotes || "");
-        form.setValue("editorNotes", shootData.editorNotes || "");
+        form.setValue("photographerNotes", shootData.photographerNotes ?? "");
+        form.setValue("editorNotes", shootData.editorNotes ?? "");
         form.setValue(
           "photographerIds",
           shootData.shootPhotographers.map((sp) => sp.photographerId),

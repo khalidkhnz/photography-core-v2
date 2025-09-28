@@ -52,7 +52,7 @@ export default function EditPhotographerPage({
   const [photographerId, setPhotographerId] = useState<string>("");
 
   useEffect(() => {
-    params.then(({ id }) => setPhotographerId(id));
+    void params.then(({ id }) => setPhotographerId(id));
   }, [params]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -85,13 +85,13 @@ export default function EditPhotographerPage({
 
         // Populate form with existing data
         form.setValue("name", photographer.name);
-        form.setValue("email", photographer.email || "");
-        form.setValue("phone", photographer.phone || "");
-        form.setValue("specialties", photographer.specialties || []);
-        form.setValue("rating", photographer.rating || 0);
+        form.setValue("email", photographer.email ?? "");
+        form.setValue("phone", photographer.phone ?? "");
+        form.setValue("specialties", photographer.specialties ?? []);
+        form.setValue("rating", photographer.rating ?? 0);
         form.setValue("isActive", photographer.isActive);
 
-        setSpecialties(photographer.specialties || []);
+        setSpecialties(photographer.specialties ?? []);
       } catch (error) {
         console.error("Error fetching photographer:", error);
         setError("Failed to load photographer data");
@@ -138,7 +138,7 @@ export default function EditPhotographerPage({
       if (result.success) {
         void router.push("/dashboard/photographers");
       } else {
-        setError(result.error || "Failed to update photographer");
+        setError(result.error ?? "Failed to update photographer");
       }
     } catch (err) {
       setError(
@@ -180,7 +180,7 @@ export default function EditPhotographerPage({
         <CardHeader>
           <CardTitle>Photographer Information</CardTitle>
           <CardDescription>
-            Update the photographer's details and specialties
+            Update the photographer&apos;s details and specialties
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

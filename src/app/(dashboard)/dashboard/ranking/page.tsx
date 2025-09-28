@@ -8,15 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Trophy,
-  Star,
-  Camera,
-  TrendingUp,
-  Award,
-  Medal,
-  Crown,
-} from "lucide-react";
+import { Trophy, Star, Camera, Award, Medal, Crown } from "lucide-react";
 import Link from "next/link";
 
 export default async function RankingPage() {
@@ -26,8 +18,8 @@ export default async function RankingPage() {
   const sortedPhotographers = photographers
     .filter((p) => p.isActive)
     .sort((a, b) => {
-      const ratingA = a.rating || 0;
-      const ratingB = b.rating || 0;
+      const ratingA = a.rating ?? 0;
+      const ratingB = b.rating ?? 0;
 
       if (ratingA !== ratingB) {
         return ratingB - ratingA; // Higher rating first
@@ -141,7 +133,7 @@ export default async function RankingPage() {
                         <div className="mt-1 flex items-center space-x-1">
                           <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                           <span className="text-sm font-medium">
-                            {photographer.rating?.toFixed(1) || "0.0"}
+                            {photographer.rating?.toFixed(1) ?? "0.0"}
                           </span>
                         </div>
                         <div className="mt-2">
@@ -182,7 +174,7 @@ export default async function RankingPage() {
                       <div className="flex items-center space-x-1">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                         <span className="text-sm font-medium">
-                          {photographer.rating?.toFixed(1) || "0.0"}
+                          {photographer.rating?.toFixed(1) ?? "0.0"}
                         </span>
                       </div>
                       {photographer.specialties &&
