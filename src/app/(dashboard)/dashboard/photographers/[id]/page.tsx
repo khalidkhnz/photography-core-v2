@@ -92,7 +92,9 @@ export default async function ViewPhotographerPage({
               </div>
               <div>
                 <p className="text-sm font-medium">Total Shoots</p>
-                <Badge variant="outline">{photographer._count.shoots}</Badge>
+                <Badge variant="outline">
+                  {photographer._count.shootPhotographers}
+                </Badge>
               </div>
               {photographer.email && (
                 <div className="md:col-span-2">
@@ -169,7 +171,7 @@ export default async function ViewPhotographerPage({
                     <span className="text-sm font-medium">Total Shoots</span>
                   </div>
                   <Badge variant="secondary">
-                    {photographer._count.shoots}
+                    {photographer._count.shootPhotographers}
                   </Badge>
                 </div>
 
@@ -199,7 +201,7 @@ export default async function ViewPhotographerPage({
                 </div>
               </div>
 
-              {photographer._count.shoots === 0 && (
+              {photographer._count.shootPhotographers === 0 && (
                 <p className="text-muted-foreground mt-4 text-xs">
                   This photographer hasn't been assigned to any shoots yet
                 </p>

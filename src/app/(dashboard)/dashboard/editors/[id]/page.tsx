@@ -86,7 +86,7 @@ export default async function ViewEditorPage({
               </div>
               <div>
                 <p className="text-sm font-medium">Total Shoots</p>
-                <Badge variant="outline">{editor._count.shoots}</Badge>
+                <Badge variant="outline">{editor._count.shootEditors}</Badge>
               </div>
               {editor.email && (
                 <div className="md:col-span-2">
@@ -162,7 +162,9 @@ export default async function ViewEditorPage({
                     <Edit3 className="text-muted-foreground h-4 w-4" />
                     <span className="text-sm font-medium">Total Shoots</span>
                   </div>
-                  <Badge variant="secondary">{editor._count.shoots}</Badge>
+                  <Badge variant="secondary">
+                    {editor._count.shootEditors}
+                  </Badge>
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -189,7 +191,7 @@ export default async function ViewEditorPage({
                 </div>
               </div>
 
-              {editor._count.shoots === 0 && (
+              {editor._count.shootEditors === 0 && (
                 <p className="text-muted-foreground mt-4 text-xs">
                   This editor hasn't been assigned to any shoots yet
                 </p>

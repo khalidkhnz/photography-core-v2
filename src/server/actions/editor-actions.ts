@@ -59,7 +59,7 @@ export async function getEditorById(id: string) {
       include: {
         _count: {
           select: {
-            shoots: true,
+            shootEditors: true,
           },
         },
       },

@@ -59,7 +59,7 @@ export async function getPhotographerById(id: string) {
       include: {
         _count: {
           select: {
-            shoots: true,
+            shootPhotographers: true,
           },
         },
       },
