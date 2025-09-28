@@ -8,9 +8,7 @@ import { ToggleDarkLightMode } from "@/components/toggle-dark-light-mode";
 import {
   Camera,
   Users,
-  Building2,
   Tag,
-  Award,
   Calendar,
   Settings,
   LogOut,
@@ -18,7 +16,6 @@ import {
   Edit,
   Type,
   Trophy,
-  Award as AwardIcon,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -58,19 +55,9 @@ const navigation = [
     icon: Type,
   },
   {
-    name: "Studios",
-    href: "/dashboard/studios",
-    icon: Building2,
-  },
-  {
     name: "Coupons",
     href: "/dashboard/coupons",
     icon: Tag,
-  },
-  {
-    name: "Expertises",
-    href: "/dashboard/expertises",
-    icon: Award,
   },
   {
     name: "Photographer Ranking",

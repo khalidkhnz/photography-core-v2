@@ -1,3 +1,4 @@
+import { getCoupons, deleteCoupon } from "@/server/actions/coupon-actions";
 import {
   Card,
   CardContent,
@@ -8,6 +9,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Tag,
   Plus,
   Edit,
@@ -16,52 +23,13 @@ import {
   Calendar,
   Percent,
   DollarSign,
+  MoreHorizontal,
 } from "lucide-react";
+import Link from "next/link";
+import { format } from "date-fns";
 
-// Mock data for coupons - in a real app, this would come from the database
-const mockCoupons = [
-  {
-    id: "1",
-    code: "WELCOME20",
-    description: "Welcome discount for new clients",
-    type: "percentage",
-    value: 20,
-    minAmount: 100,
-    maxUses: 100,
-    usedCount: 15,
-    validFrom: "2024-01-01",
-    validUntil: "2024-12-31",
-    isActive: true,
-  },
-  {
-    id: "2",
-    code: "SUMMER50",
-    description: "Summer special discount",
-    type: "fixed",
-    value: 50,
-    minAmount: 200,
-    maxUses: 50,
-    usedCount: 23,
-    validFrom: "2024-06-01",
-    validUntil: "2024-08-31",
-    isActive: true,
-  },
-  {
-    id: "3",
-    code: "LOYALTY10",
-    description: "Loyalty reward for returning clients",
-    type: "percentage",
-    value: 10,
-    minAmount: 50,
-    maxUses: null,
-    usedCount: 8,
-    validFrom: "2024-01-01",
-    validUntil: null,
-    isActive: false,
-  },
-];
-
-export default function CouponsPage() {
+export default async function CouponsPage() {
+  const coupons = await getCoupons();
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -71,13 +39,15 @@ export default function CouponsPage() {
             Manage discount coupons and promotional codes
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Create Coupon
+        <Button asChild>
+          <Link href="/dashboard/coupons/new">
+            <Plus className="mr-2 h-4 w-4" />
+            Create Coupon
+          </Link>
         </Button>
       </div>
 
-      {mockCoupons.length === 0 ? (
+      {coupons.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <div className="space-y-2 text-center">
@@ -86,16 +56,18 @@ export default function CouponsPage() {
               <p className="text-muted-foreground">
                 Create your first discount coupon to get started
               </p>
-              <Button className="mt-4">
-                <Plus className="mr-2 h-4 w-4" />
-                Create Coupon
+              <Button asChild className="mt-4">
+                <Link href="/dashboard/coupons/new">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Coupon
+                </Link>
               </Button>
             </div>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4">
-          {mockCoupons.map((coupon) => (
+          {coupons.map((coupon) => (
             <Card key={coupon.id}>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
@@ -129,8 +101,13 @@ export default function CouponsPage() {
                       <div className="flex items-center space-x-1">
                         <Calendar className="h-4 w-4" />
                         <span>
-                          {coupon.validFrom} -{" "}
-                          {coupon.validUntil || "No expiry"}
+                          {format(new Date(coupon.validFrom), "MMM dd, yyyy")} -{" "}
+                          {coupon.validUntil
+                            ? format(
+                                new Date(coupon.validUntil),
+                                "MMM dd, yyyy",
+                              )
+                            : "No expiry"}
                         </span>
                       </div>
 
@@ -142,7 +119,7 @@ export default function CouponsPage() {
                       </div>
                     </div>
 
-                    {coupon.minAmount > 0 && (
+                    {coupon.minAmount && coupon.minAmount > 0 && (
                       <p className="text-muted-foreground text-sm">
                         Minimum order: ${coupon.minAmount}
                       </p>
@@ -154,14 +131,37 @@ export default function CouponsPage() {
                       <Copy className="mr-2 h-4 w-4" />
                       Copy
                     </Button>
-                    <Button variant="outline" size="sm">
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/dashboard/coupons/${coupon.id}`}>
+                            <Tag className="mr-2 h-4 w-4" />
+                            View Details
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/dashboard/coupons/${coupon.id}/edit`}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={async () => {
+                            "use server";
+                            await deleteCoupon(coupon.id);
+                          }}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </CardContent>
@@ -178,9 +178,9 @@ export default function CouponsPage() {
             <Tag className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockCoupons.length}</div>
+            <div className="text-2xl font-bold">{coupons.length}</div>
             <p className="text-muted-foreground text-xs">
-              {mockCoupons.filter((c) => c.isActive).length} active
+              {coupons.filter((c) => c.isActive).length} active
             </p>
           </CardContent>
         </Card>
@@ -192,7 +192,7 @@ export default function CouponsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockCoupons.reduce((sum, coupon) => sum + coupon.usedCount, 0)}
+              {coupons.reduce((sum, coupon) => sum + coupon.usedCount, 0)}
             </div>
             <p className="text-muted-foreground text-xs">Across all coupons</p>
           </CardContent>
@@ -207,7 +207,7 @@ export default function CouponsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockCoupons.filter((c) => c.isActive).length}
+              {coupons.filter((c) => c.isActive).length}
             </div>
             <p className="text-muted-foreground text-xs">Currently available</p>
           </CardContent>
