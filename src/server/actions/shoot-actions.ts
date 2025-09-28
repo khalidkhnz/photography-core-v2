@@ -19,10 +19,18 @@ const createShootSchema = z.object({
   editorIds: z.array(z.string()).optional(),
 });
 
+// Function to generate unique Shoot ID
+function generateShootId(shootTypeCode: string): string {
+  const timestamp = Date.now().toString().slice(-6); // Last 6 digits of timestamp
+  const random = Math.floor(Math.random() * 1000)
+    .toString()
+    .padStart(3, "0");
+  return `${shootTypeCode}-${timestamp}-${random}`;
+}
+
 export async function createShoot(formData: FormData) {
   try {
     const rawData = {
-      shootId: formData.get("shootId") as string,
       clientId: formData.get("clientId") as string,
       shootTypeId: formData.get("shootTypeId") as string,
       locationId: (formData.get("locationId") as string) || undefined,
@@ -37,16 +45,37 @@ export async function createShoot(formData: FormData) {
       editorIds: formData.getAll("editorIds") as string[],
     };
 
-    const validatedData = createShootSchema.parse(rawData);
-
-    // Check if shoot ID already exists
-    const existingShoot = await db.shoot.findUnique({
-      where: { shootId: validatedData.shootId },
+    // Get shoot type to generate ID
+    const shootType = await db.shootType.findUnique({
+      where: { id: rawData.shootTypeId },
     });
 
-    if (existingShoot) {
-      throw new Error("Shoot ID already exists");
+    if (!shootType) {
+      throw new Error("Invalid shoot type");
     }
+
+    // Generate unique shoot ID
+    let shootId: string;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    do {
+      shootId = generateShootId(shootType.code);
+      const existingShoot = await db.shoot.findUnique({
+        where: { shootId },
+      });
+      if (!existingShoot) break;
+      attempts++;
+    } while (attempts < maxAttempts);
+
+    if (attempts >= maxAttempts) {
+      throw new Error("Failed to generate unique shoot ID");
+    }
+
+    const validatedData = createShootSchema.parse({
+      ...rawData,
+      shootId,
+    });
 
     // Create the shoot
     const shoot = await db.shoot.create({

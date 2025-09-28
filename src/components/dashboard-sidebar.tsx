@@ -14,6 +14,7 @@ import {
   Calendar,
   Settings,
   LogOut,
+  UserCheck,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -31,6 +32,11 @@ const navigation = [
       { name: "All Shoots", href: "/dashboard/shoots" },
       { name: "Create Shoot", href: "/dashboard/shoots/new" },
     ],
+  },
+  {
+    name: "Clients",
+    href: "/dashboard/clients",
+    icon: UserCheck,
   },
   {
     name: "Photographers",

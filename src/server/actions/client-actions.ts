@@ -8,6 +8,7 @@ const createClientSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email().optional(),
   phone: z.string().optional(),
+  address: z.string().optional(),
 });
 
 export async function createClient(formData: FormData) {
@@ -16,6 +17,7 @@ export async function createClient(formData: FormData) {
       name: formData.get("name") as string,
       email: (formData.get("email") as string) || undefined,
       phone: (formData.get("phone") as string) || undefined,
+      address: (formData.get("address") as string) || undefined,
     };
 
     const validatedData = createClientSchema.parse(rawData);
@@ -37,6 +39,16 @@ export async function createClient(formData: FormData) {
 export async function getClients() {
   try {
     const clients = await db.client.findMany({
+      include: {
+        locations: {
+          orderBy: { name: "asc" },
+        },
+        _count: {
+          select: {
+            shoots: true,
+          },
+        },
+      },
       orderBy: {
         name: "asc",
       },
@@ -46,6 +58,28 @@ export async function getClients() {
   } catch (error) {
     console.error("Error fetching clients:", error);
     throw new Error("Failed to fetch clients");
+  }
+}
+
+export async function getClientById(id: string) {
+  try {
+    const client = await db.client.findUnique({
+      where: { id },
+      include: {
+        locations: {
+          orderBy: { name: "asc" },
+        },
+        _count: {
+          select: {
+            shoots: true,
+          },
+        },
+      },
+    });
+    return client;
+  } catch (error) {
+    console.error(`Error fetching client with ID ${id}:`, error);
+    throw new Error("Failed to fetch client");
   }
 }
 

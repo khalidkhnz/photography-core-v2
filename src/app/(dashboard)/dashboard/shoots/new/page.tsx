@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createShoot } from "@/server/actions/shoot-actions";
 import { getClients } from "@/server/actions/client-actions";
 import { getShootTypes } from "@/server/actions/shoot-type-actions";
-import { getLocations } from "@/server/actions/location-actions";
+import { getLocationsByClient } from "@/server/actions/location-actions";
 import { getPhotographers } from "@/server/actions/photographer-actions";
 import { getEditors } from "@/server/actions/editor-actions";
 import {
@@ -16,6 +16,7 @@ import {
 } from "@/lib/validations/shoot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
@@ -90,7 +91,7 @@ export default function CreateShootPage() {
   const form = useForm<CreateShootFormData>({
     resolver: zodResolver(createShootSchema),
     defaultValues: {
-      shootId: "",
+      shootId: "", // Will be auto-generated
       clientId: "",
       shootTypeId: "",
       locationId: "",
@@ -104,27 +105,23 @@ export default function CreateShootPage() {
     },
   });
 
+  // Watch for client changes to fetch locations
+  const selectedClientId = form.watch("clientId");
+
   // Fetch data on component mount
   useEffect(() => {
     async function fetchData() {
       try {
-        const [
-          clientsData,
-          shootTypesData,
-          locationsData,
-          photographersData,
-          editorsData,
-        ] = await Promise.all([
-          getClients(),
-          getShootTypes(),
-          getLocations(),
-          getPhotographers(),
-          getEditors(),
-        ]);
+        const [clientsData, shootTypesData, photographersData, editorsData] =
+          await Promise.all([
+            getClients(),
+            getShootTypes(),
+            getPhotographers(),
+            getEditors(),
+          ]);
 
         setClients(clientsData);
         setShootTypes(shootTypesData);
-        setLocations(locationsData);
         setPhotographers(photographersData);
         setEditors(editorsData);
       } catch (error) {
@@ -138,6 +135,27 @@ export default function CreateShootPage() {
     void fetchData();
   }, []);
 
+  // Fetch locations when client changes
+  useEffect(() => {
+    async function fetchClientLocations() {
+      if (selectedClientId) {
+        try {
+          const clientLocations = await getLocationsByClient(selectedClientId);
+          setLocations(clientLocations);
+          // Reset location selection when client changes
+          form.setValue("locationId", "");
+        } catch (error) {
+          console.error("Error fetching client locations:", error);
+        }
+      } else {
+        setLocations([]);
+        form.setValue("locationId", "");
+      }
+    }
+
+    void fetchClientLocations();
+  }, [selectedClientId, form]);
+
   const onSubmit = async (data: CreateShootFormData) => {
     setIsLoading(true);
     setError("");
@@ -145,7 +163,7 @@ export default function CreateShootPage() {
     try {
       // Convert the form data to FormData for the server action
       const formData = new FormData();
-      formData.append("shootId", data.shootId);
+      // Shoot ID will be auto-generated on the server
       formData.append("clientId", data.clientId);
       formData.append("shootTypeId", data.shootTypeId);
       if (data.locationId) formData.append("locationId", data.locationId);
@@ -226,19 +244,19 @@ export default function CreateShootPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="shootId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Shoot ID *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., RE-2024-001" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="space-y-2">
+                    <Label>Shoot ID</Label>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        value="Auto-generated"
+                        disabled
+                        className="bg-muted text-muted-foreground"
+                      />
+                      <span className="text-muted-foreground text-sm">
+                        Will be generated based on shoot type
+                      </span>
+                    </div>
+                  </div>
 
                   <FormField
                     control={form.control}
@@ -305,20 +323,44 @@ export default function CreateShootPage() {
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
+                          disabled={!selectedClientId}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a location" />
+                              <SelectValue
+                                placeholder={
+                                  !selectedClientId
+                                    ? "Select a client first"
+                                    : locations.length === 0
+                                      ? "No locations found for this client"
+                                      : "Select a location"
+                                }
+                              />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {locations.map((location) => (
-                              <SelectItem key={location.id} value={location.id}>
-                                {location.name}
-                              </SelectItem>
-                            ))}
+                            {locations.length === 0 && selectedClientId ? (
+                              <div className="text-muted-foreground px-2 py-1 text-sm">
+                                No locations found. Add locations for this
+                                client first.
+                              </div>
+                            ) : (
+                              locations.map((location) => (
+                                <SelectItem
+                                  key={location.id}
+                                  value={location.id}
+                                >
+                                  {location.name}
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
+                        {!selectedClientId && (
+                          <p className="text-muted-foreground text-xs">
+                            Please select a client to see available locations
+                          </p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}

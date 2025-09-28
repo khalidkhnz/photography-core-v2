@@ -11,6 +11,7 @@ const createLocationSchema = z.object({
   state: z.string().optional(),
   country: z.string().optional(),
   coordinates: z.string().optional(),
+  clientId: z.string().optional(),
 });
 
 export async function createLocation(formData: FormData) {
@@ -22,6 +23,7 @@ export async function createLocation(formData: FormData) {
       state: (formData.get("state") as string) || undefined,
       country: (formData.get("country") as string) || undefined,
       coordinates: (formData.get("coordinates") as string) || undefined,
+      clientId: (formData.get("clientId") as string) || undefined,
     };
 
     const validatedData = createLocationSchema.parse(rawData);
@@ -41,11 +43,27 @@ export async function createLocation(formData: FormData) {
 export async function getLocations() {
   try {
     const locations = await db.location.findMany({
+      include: {
+        client: true,
+      },
       orderBy: { name: "asc" },
     });
     return locations;
   } catch (error) {
     console.error("Error fetching locations:", error);
+    return [];
+  }
+}
+
+export async function getLocationsByClient(clientId: string) {
+  try {
+    const locations = await db.location.findMany({
+      where: { clientId },
+      orderBy: { name: "asc" },
+    });
+    return locations;
+  } catch (error) {
+    console.error(`Error fetching locations for client ${clientId}:`, error);
     return [];
   }
 }
