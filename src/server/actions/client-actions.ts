@@ -83,6 +83,32 @@ export async function getClientById(id: string) {
   }
 }
 
+export async function updateClient(id: string, formData: FormData) {
+  try {
+    const rawData = {
+      name: formData.get("name") as string,
+      email: (formData.get("email") as string) || undefined,
+      phone: (formData.get("phone") as string) || undefined,
+      address: (formData.get("address") as string) || undefined,
+    };
+
+    const validatedData = createClientSchema.parse(rawData);
+
+    const client = await db.client.update({
+      where: { id },
+      data: validatedData,
+    });
+
+    revalidatePath("/dashboard/clients");
+    return client;
+  } catch (error) {
+    console.error("Error updating client:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to update client",
+    );
+  }
+}
+
 export async function deleteClient(id: string) {
   try {
     await db.client.delete({

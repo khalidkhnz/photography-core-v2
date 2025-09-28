@@ -15,6 +15,7 @@ import {
   Settings,
   LogOut,
   UserCheck,
+  Edit,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -42,6 +43,11 @@ const navigation = [
     name: "Photographers",
     href: "/dashboard/photographers",
     icon: Users,
+  },
+  {
+    name: "Editors",
+    href: "/dashboard/editors",
+    icon: Edit,
   },
   {
     name: "Studios",

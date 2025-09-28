@@ -16,7 +16,6 @@ import {
 } from "@/lib/validations/shoot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
@@ -91,7 +90,6 @@ export default function CreateShootPage() {
   const form = useForm<CreateShootFormData>({
     resolver: zodResolver(createShootSchema),
     defaultValues: {
-      shootId: "", // Will be auto-generated
       clientId: "",
       shootTypeId: "",
       locationId: "",
@@ -244,20 +242,6 @@ export default function CreateShootPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Shoot ID</Label>
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        value="Auto-generated"
-                        disabled
-                        className="bg-muted text-muted-foreground"
-                      />
-                      <span className="text-muted-foreground text-sm">
-                        Will be generated based on shoot type
-                      </span>
-                    </div>
-                  </div>
-
                   <FormField
                     control={form.control}
                     name="clientId"
