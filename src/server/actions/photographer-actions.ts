@@ -19,7 +19,9 @@ export async function createPhotographer(formData: FormData) {
       name: formData.get("name") as string,
       email: (formData.get("email") as string) || undefined,
       phone: (formData.get("phone") as string) || undefined,
-      specialties: JSON.parse((formData.get("specialties") as string) || "[]"),
+      specialties: JSON.parse(
+        (formData.get("specialties") as string) || "[]",
+      ) as string[],
       rating: parseFloat((formData.get("rating") as string) || "0"),
       isActive: formData.get("isActive") === "true",
     };

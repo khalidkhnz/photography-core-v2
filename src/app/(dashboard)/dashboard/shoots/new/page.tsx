@@ -2,16 +2,31 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { createShoot } from "@/server/actions/shoot-actions";
 import { getClients } from "@/server/actions/client-actions";
 import { getShootTypes } from "@/server/actions/shoot-type-actions";
 import { getLocations } from "@/server/actions/location-actions";
 import { getPhotographers } from "@/server/actions/photographer-actions";
 import { getEditors } from "@/server/actions/editor-actions";
+import {
+  createShootSchema,
+  type CreateShootFormData,
+} from "@/lib/validations/shoot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -72,6 +87,23 @@ export default function CreateShootPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const router = useRouter();
 
+  const form = useForm<CreateShootFormData>({
+    resolver: zodResolver(createShootSchema),
+    defaultValues: {
+      shootId: "",
+      clientId: "",
+      shootTypeId: "",
+      locationId: "",
+      overallDeliverables: "",
+      shootStartDate: "",
+      shootEndDate: "",
+      photographerNotes: "",
+      editorNotes: "",
+      photographerIds: [],
+      editorIds: [],
+    },
+  });
+
   // Fetch data on component mount
   useEffect(() => {
     async function fetchData() {
@@ -103,16 +135,45 @@ export default function CreateShootPage() {
       }
     }
 
-    fetchData();
+    void fetchData();
   }, []);
 
-  const handleSubmit = async (formData: FormData) => {
+  const onSubmit = async (data: CreateShootFormData) => {
     setIsLoading(true);
     setError("");
 
     try {
+      // Convert the form data to FormData for the server action
+      const formData = new FormData();
+      formData.append("shootId", data.shootId);
+      formData.append("clientId", data.clientId);
+      formData.append("shootTypeId", data.shootTypeId);
+      if (data.locationId) formData.append("locationId", data.locationId);
+      if (data.overallDeliverables)
+        formData.append("overallDeliverables", data.overallDeliverables);
+      if (data.shootStartDate)
+        formData.append("shootStartDate", data.shootStartDate);
+      if (data.shootEndDate) formData.append("shootEndDate", data.shootEndDate);
+      if (data.photographerNotes)
+        formData.append("photographerNotes", data.photographerNotes);
+      if (data.editorNotes) formData.append("editorNotes", data.editorNotes);
+
+      // Add photographer IDs
+      if (data.photographerIds) {
+        data.photographerIds.forEach((id) => {
+          formData.append("photographerIds", id);
+        });
+      }
+
+      // Add editor IDs
+      if (data.editorIds) {
+        data.editorIds.forEach((id) => {
+          formData.append("editorIds", id);
+        });
+      }
+
       await createShoot(formData);
-      router.push("/dashboard/shoots");
+      void router.push("/dashboard/shoots");
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "Failed to create shoot",
@@ -148,218 +209,357 @@ export default function CreateShootPage() {
           </div>
         </div>
       ) : (
-        <form action={handleSubmit} className="space-y-6">
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
-                <CardDescription>
-                  Essential details about the shoot
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="shootId">Shoot ID *</Label>
-                  <Input
-                    id="shootId"
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Basic Information</CardTitle>
+                  <CardDescription>
+                    Essential details about the shoot
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
                     name="shootId"
-                    placeholder="e.g., RE-2024-001"
-                    required
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Shoot ID *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., RE-2024-001" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="clientId">Client *</Label>
-                  <Select name="clientId" required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <FormField
+                    control={form.control}
+                    name="clientId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Client *</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a client" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {clients.map((client) => (
+                              <SelectItem key={client.id} value={client.id}>
+                                {client.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <div className="space-y-2">
-                  <Label htmlFor="shootTypeId">Shoot Type *</Label>
-                  <Select name="shootTypeId" required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select shoot type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {shootTypes.map((type) => (
-                        <SelectItem key={type.id} value={type.id}>
-                          {type.name} ({type.code})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <FormField
+                    control={form.control}
+                    name="shootTypeId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Shoot Type *</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select shoot type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {shootTypes.map((type) => (
+                              <SelectItem key={type.id} value={type.id}>
+                                {type.name} ({type.code})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <div className="space-y-2">
-                  <Label htmlFor="locationId">Location</Label>
-                  <Select name="locationId">
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {locations.map((location) => (
-                        <SelectItem key={location.id} value={location.id}>
-                          {location.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
+                  <FormField
+                    control={form.control}
+                    name="locationId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a location" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {locations.map((location) => (
+                              <SelectItem key={location.id} value={location.id}>
+                                {location.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Schedule & Details</CardTitle>
-                <CardDescription>
-                  Timing and deliverable information
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="shootStartDate">Start Date</Label>
-                  <Input
-                    id="shootStartDate"
+              <Card>
+                <CardHeader>
+                  <CardTitle>Schedule & Details</CardTitle>
+                  <CardDescription>
+                    Timing and deliverable information
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
                     name="shootStartDate"
-                    type="datetime-local"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Start Date</FormLabel>
+                        <FormControl>
+                          <Input type="datetime-local" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="shootEndDate">End Date</Label>
-                  <Input
-                    id="shootEndDate"
+                  <FormField
+                    control={form.control}
                     name="shootEndDate"
-                    type="datetime-local"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>End Date</FormLabel>
+                        <FormControl>
+                          <Input type="datetime-local" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="overallDeliverables">
-                    Overall Deliverables
-                  </Label>
-                  <Textarea
-                    id="overallDeliverables"
+                  <FormField
+                    control={form.control}
                     name="overallDeliverables"
-                    placeholder="Describe what will be delivered..."
-                    rows={3}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Overall Deliverables</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Describe what will be delivered..."
+                            rows={3}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                </CardContent>
+              </Card>
+            </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Photographer Team</CardTitle>
-                <CardDescription>
-                  Assign photographers to this shoot
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Photographers</Label>
-                  <div className="space-y-2">
-                    {photographers.map((photographer) => (
-                      <div
-                        key={photographer.id}
-                        className="flex items-center space-x-2"
-                      >
-                        <input
-                          type="checkbox"
-                          id={`photographer-${photographer.id}`}
-                          name="photographerIds"
-                          value={photographer.id}
-                          className="rounded border-gray-300"
-                        />
-                        <Label htmlFor={`photographer-${photographer.id}`}>
-                          {photographer.name}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Photographer Team</CardTitle>
+                  <CardDescription>
+                    Assign photographers to this shoot
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="photographerIds"
+                    render={() => (
+                      <FormItem>
+                        <div className="mb-4">
+                          <FormLabel className="text-base">
+                            Photographers
+                          </FormLabel>
+                          <FormDescription>
+                            Select the photographers for this shoot
+                          </FormDescription>
+                        </div>
+                        {photographers.map((photographer) => (
+                          <FormField
+                            key={photographer.id}
+                            control={form.control}
+                            name="photographerIds"
+                            render={({ field }) => {
+                              return (
+                                <FormItem
+                                  key={photographer.id}
+                                  className="flex flex-row items-start space-y-0 space-x-3"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(
+                                        photographer.id,
+                                      )}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([
+                                              ...(field.value ?? []),
+                                              photographer.id,
+                                            ])
+                                          : field.onChange(
+                                              (field.value ?? []).filter(
+                                                (value) =>
+                                                  value !== photographer.id,
+                                              ),
+                                            );
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="font-normal">
+                                    {photographer.name}
+                                  </FormLabel>
+                                </FormItem>
+                              );
+                            }}
+                          />
+                        ))}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <div className="space-y-2">
-                  <Label htmlFor="photographerNotes">Photographer Notes</Label>
-                  <Textarea
-                    id="photographerNotes"
+                  <FormField
+                    control={form.control}
                     name="photographerNotes"
-                    placeholder="Notes for the photography team..."
-                    rows={3}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Photographer Notes</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Notes for the photography team..."
+                            rows={3}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Editor Team</CardTitle>
-                <CardDescription>Assign editors to this shoot</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Editors</Label>
-                  <div className="space-y-2">
-                    {editors.map((editor) => (
-                      <div
-                        key={editor.id}
-                        className="flex items-center space-x-2"
-                      >
-                        <input
-                          type="checkbox"
-                          id={`editor-${editor.id}`}
-                          name="editorIds"
-                          value={editor.id}
-                          className="rounded border-gray-300"
-                        />
-                        <Label htmlFor={`editor-${editor.id}`}>
-                          {editor.name}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Editor Team</CardTitle>
+                  <CardDescription>
+                    Assign editors to this shoot
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="editorIds"
+                    render={() => (
+                      <FormItem>
+                        <div className="mb-4">
+                          <FormLabel className="text-base">Editors</FormLabel>
+                          <FormDescription>
+                            Select the editors for this shoot
+                          </FormDescription>
+                        </div>
+                        {editors.map((editor) => (
+                          <FormField
+                            key={editor.id}
+                            control={form.control}
+                            name="editorIds"
+                            render={({ field }) => {
+                              return (
+                                <FormItem
+                                  key={editor.id}
+                                  className="flex flex-row items-start space-y-0 space-x-3"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(editor.id)}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([
+                                              ...(field.value ?? []),
+                                              editor.id,
+                                            ])
+                                          : field.onChange(
+                                              (field.value ?? []).filter(
+                                                (value) => value !== editor.id,
+                                              ),
+                                            );
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="font-normal">
+                                    {editor.name}
+                                  </FormLabel>
+                                </FormItem>
+                              );
+                            }}
+                          />
+                        ))}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <div className="space-y-2">
-                  <Label htmlFor="editorNotes">Editor Notes</Label>
-                  <Textarea
-                    id="editorNotes"
+                  <FormField
+                    control={form.control}
                     name="editorNotes"
-                    placeholder="Notes for the editing team..."
-                    rows={3}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Editor Notes</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Notes for the editing team..."
+                            rows={3}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                </CardContent>
+              </Card>
+            </div>
 
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" asChild>
-              <Link href="/dashboard/shoots">Cancel</Link>
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Creating..." : "Create Shoot"}
-            </Button>
-          </div>
-        </form>
+            <div className="flex justify-end space-x-4">
+              <Button type="button" variant="outline" asChild>
+                <Link href="/dashboard/shoots">Cancel</Link>
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Creating..." : "Create Shoot"}
+              </Button>
+            </div>
+          </form>
+        </Form>
       )}
     </div>
   );
