@@ -3,41 +3,59 @@ import { getClients } from "@/server/actions/client-actions";
 import { getPhotographers } from "@/server/actions/photographer-actions";
 import { getEditors } from "@/server/actions/editor-actions";
 import { getShootTypes } from "@/server/actions/shoot-type-actions";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Camera, 
-  Users, 
-  Edit, 
-  Calendar, 
-  Building2, 
+import {
+  Camera,
+  Users,
+  Edit,
+  Calendar,
+  Building2,
   Tag,
   TrendingUp,
   Clock,
   CheckCircle,
-  XCircle
+  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 
 export default async function DashboardPage() {
-  const [shoots, clients, photographers, editors, shootTypes] = await Promise.all([
-    getShoots(),
-    getClients(),
-    getPhotographers(),
-    getEditors(),
-    getShootTypes(),
-  ]);
+  const [shoots, clients, photographers, editors, shootTypes] =
+    await Promise.all([
+      getShoots(),
+      getClients(),
+      getPhotographers(),
+      getEditors(),
+      getShootTypes(),
+    ]);
 
   // Calculate statistics
   const totalShoots = shoots.length;
-  const plannedShoots = shoots.filter(shoot => shoot.status === "planned").length;
-  const inProgressShoots = shoots.filter(shoot => shoot.status === "in_progress").length;
-  const completedShoots = shoots.filter(shoot => shoot.status === "completed").length;
-  const cancelledShoots = shoots.filter(shoot => shoot.status === "cancelled").length;
+  const plannedShoots = shoots.filter(
+    (shoot) => shoot.status === "planned",
+  ).length;
+  const inProgressShoots = shoots.filter(
+    (shoot) => shoot.status === "in_progress",
+  ).length;
+  const completedShoots = shoots.filter(
+    (shoot) => shoot.status === "completed",
+  ).length;
+  const cancelledShoots = shoots.filter(
+    (shoot) => shoot.status === "cancelled",
+  ).length;
 
-  const activePhotographers = photographers.filter(p => p.isActive).length;
-  const activeEditors = editors.filter(e => e.isActive).length;
-  const totalLocations = clients.reduce((sum, client) => sum + (client.locations?.length || 0), 0);
+  const activePhotographers = photographers.filter((p) => p.isActive).length;
+  const activeEditors = editors.filter((e) => e.isActive).length;
+  const totalLocations = clients.reduce(
+    (sum, client) => sum + (client.locations?.length || 0),
+    0,
+  );
 
   // Recent shoots (last 5)
   const recentShoots = shoots.slice(0, 5);
@@ -56,11 +74,11 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Shoots</CardTitle>
-            <Camera className="h-4 w-4 text-muted-foreground" />
+            <Camera className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalShoots}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               All photography shoots
             </p>
           </CardContent>
@@ -69,11 +87,13 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Team</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Users className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activePhotographers + activeEditors}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold">
+              {activePhotographers + activeEditors}
+            </div>
+            <p className="text-muted-foreground text-xs">
               {activePhotographers} photographers, {activeEditors} editors
             </p>
           </CardContent>
@@ -82,11 +102,11 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Clients</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <Building2 className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{clients.length}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               {totalLocations} total locations
             </p>
           </CardContent>
@@ -95,11 +115,11 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Shoot Types</CardTitle>
-            <Tag className="h-4 w-4 text-muted-foreground" />
+            <Tag className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{shootTypes.length}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Available shoot categories
             </p>
           </CardContent>
@@ -114,8 +134,10 @@ export default async function DashboardPage() {
             <Clock className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{plannedShoots}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-blue-600">
+              {plannedShoots}
+            </div>
+            <p className="text-muted-foreground text-xs">
               Shoots ready to start
             </p>
           </CardContent>
@@ -127,10 +149,10 @@ export default async function DashboardPage() {
             <TrendingUp className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{inProgressShoots}</div>
-            <p className="text-xs text-muted-foreground">
-              Currently active
-            </p>
+            <div className="text-2xl font-bold text-yellow-600">
+              {inProgressShoots}
+            </div>
+            <p className="text-muted-foreground text-xs">Currently active</p>
           </CardContent>
         </Card>
 
@@ -140,8 +162,10 @@ export default async function DashboardPage() {
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{completedShoots}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-green-600">
+              {completedShoots}
+            </div>
+            <p className="text-muted-foreground text-xs">
               Successfully finished
             </p>
           </CardContent>
@@ -153,10 +177,10 @@ export default async function DashboardPage() {
             <XCircle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{cancelledShoots}</div>
-            <p className="text-xs text-muted-foreground">
-              Cancelled shoots
-            </p>
+            <div className="text-2xl font-bold text-red-600">
+              {cancelledShoots}
+            </div>
+            <p className="text-muted-foreground text-xs">Cancelled shoots</p>
           </CardContent>
         </Card>
       </div>
@@ -172,15 +196,15 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             {recentShoots.length === 0 ? (
-              <div className="text-center py-6">
-                <Calendar className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No shoots yet</h3>
+              <div className="py-6 text-center">
+                <Calendar className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                <h3 className="mb-2 text-lg font-semibold">No shoots yet</h3>
                 <p className="text-muted-foreground mb-4">
                   Get started by creating your first photography shoot
                 </p>
-                <Link 
+                <Link
                   href="/dashboard/shoots/new"
-                  className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium"
                 >
                   <Camera className="mr-2 h-4 w-4" />
                   Create Shoot
@@ -189,28 +213,35 @@ export default async function DashboardPage() {
             ) : (
               <div className="space-y-4">
                 {recentShoots.map((shoot) => (
-                  <div key={shoot.id} className="flex items-center justify-between">
+                  <div
+                    key={shoot.id}
+                    className="flex items-center justify-between"
+                  >
                     <div className="space-y-1">
-                      <p className="text-sm font-medium leading-none">
+                      <p className="text-sm leading-none font-medium">
                         {shoot.shootId}
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {shoot.client.name} • {shoot.shootType.name}
                       </p>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Badge 
+                      <Badge
                         variant={
-                          shoot.status === "planned" ? "secondary" :
-                          shoot.status === "in_progress" ? "default" :
-                          shoot.status === "completed" ? "default" : "destructive"
+                          shoot.status === "planned"
+                            ? "secondary"
+                            : shoot.status === "in_progress"
+                              ? "default"
+                              : shoot.status === "completed"
+                                ? "default"
+                                : "destructive"
                         }
                       >
                         {shoot.status.replace("_", " ")}
                       </Badge>
-                      <Link 
+                      <Link
                         href={`/dashboard/shoots/${shoot.id}`}
-                        className="text-sm text-primary hover:underline"
+                        className="text-primary text-sm hover:underline"
                       >
                         View
                       </Link>
@@ -218,9 +249,9 @@ export default async function DashboardPage() {
                   </div>
                 ))}
                 <div className="pt-2">
-                  <Link 
+                  <Link
                     href="/dashboard/shoots"
-                    className="text-sm text-primary hover:underline"
+                    className="text-primary text-sm hover:underline"
                   >
                     View all shoots →
                   </Link>
@@ -233,42 +264,40 @@ export default async function DashboardPage() {
         <Card className="col-span-3">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>
-              Common tasks and shortcuts
-            </CardDescription>
+            <CardDescription>Common tasks and shortcuts</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Link 
+            <Link
               href="/dashboard/shoots/new"
-              className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted transition-colors"
+              className="hover:bg-muted flex items-center space-x-2 rounded-md p-2 transition-colors"
             >
               <Camera className="h-4 w-4" />
               <span className="text-sm">Create New Shoot</span>
             </Link>
-            <Link 
+            <Link
               href="/dashboard/clients/new"
-              className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted transition-colors"
+              className="hover:bg-muted flex items-center space-x-2 rounded-md p-2 transition-colors"
             >
               <Building2 className="h-4 w-4" />
               <span className="text-sm">Add New Client</span>
             </Link>
-            <Link 
+            <Link
               href="/dashboard/photographers/new"
-              className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted transition-colors"
+              className="hover:bg-muted flex items-center space-x-2 rounded-md p-2 transition-colors"
             >
               <Users className="h-4 w-4" />
               <span className="text-sm">Add Photographer</span>
             </Link>
-            <Link 
+            <Link
               href="/dashboard/editors/new"
-              className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted transition-colors"
+              className="hover:bg-muted flex items-center space-x-2 rounded-md p-2 transition-colors"
             >
               <Edit className="h-4 w-4" />
               <span className="text-sm">Add Editor</span>
             </Link>
-            <Link 
+            <Link
               href="/dashboard/shoot-types/new"
-              className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted transition-colors"
+              className="hover:bg-muted flex items-center space-x-2 rounded-md p-2 transition-colors"
             >
               <Tag className="h-4 w-4" />
               <span className="text-sm">Add Shoot Type</span>

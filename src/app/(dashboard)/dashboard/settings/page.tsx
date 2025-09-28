@@ -1,20 +1,26 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Settings, 
-  User, 
-  Bell, 
-  Shield, 
+import {
+  Settings,
+  User,
+  Bell,
+  Shield,
   Palette,
   Database,
   Download,
   Upload,
-  Trash2
+  Trash2,
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -52,8 +58,8 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="bio">Bio</Label>
-              <Textarea 
-                id="bio" 
+              <Textarea
+                id="bio"
                 placeholder="Tell us about yourself..."
                 rows={3}
               />
@@ -77,7 +83,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label>Email Notifications</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Receive notifications via email
                 </p>
               </div>
@@ -87,7 +93,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label>Shoot Reminders</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Get reminded about upcoming shoots
                 </p>
               </div>
@@ -97,7 +103,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label>Team Updates</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Notifications about team changes
                 </p>
               </div>
@@ -107,7 +113,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label>Client Updates</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Notifications about client activities
                 </p>
               </div>
@@ -131,14 +137,20 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <Label>Theme</Label>
               <div className="flex space-x-2">
-                <Button variant="outline" size="sm">Light</Button>
-                <Button variant="outline" size="sm">Dark</Button>
-                <Button variant="outline" size="sm">System</Button>
+                <Button variant="outline" size="sm">
+                  Light
+                </Button>
+                <Button variant="outline" size="sm">
+                  Dark
+                </Button>
+                <Button variant="outline" size="sm">
+                  System
+                </Button>
               </div>
             </div>
             <div className="space-y-2">
               <Label>Language</Label>
-              <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+              <select className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50">
                 <option value="en">English</option>
                 <option value="es">Spanish</option>
                 <option value="fr">French</option>
@@ -163,7 +175,7 @@ export default function SettingsPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Export Data</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Download all your data as a backup
                 </p>
                 <Button variant="outline" className="w-full">
@@ -173,7 +185,7 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Import Data</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Import data from a backup file
                 </p>
                 <Button variant="outline" className="w-full">
@@ -185,8 +197,9 @@ export default function SettingsPage() {
             <Separator />
             <div className="space-y-2">
               <Label>Reset System</Label>
-              <p className="text-sm text-muted-foreground">
-                This will delete all data and reset the system to default settings
+              <p className="text-muted-foreground text-sm">
+                This will delete all data and reset the system to default
+                settings
               </p>
               <Button variant="destructive" className="w-full">
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -220,7 +233,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label>Two-Factor Authentication</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Add an extra layer of security to your account
                 </p>
               </div>
@@ -229,7 +242,7 @@ export default function SettingsPage() {
             <Separator />
             <div className="space-y-2">
               <Label>Active Sessions</Label>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Manage your active login sessions
               </p>
               <Button variant="outline">View Sessions</Button>

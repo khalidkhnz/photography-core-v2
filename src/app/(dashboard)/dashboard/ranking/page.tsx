@@ -1,15 +1,21 @@
 import { getPhotographers } from "@/server/actions/photographer-actions";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  Trophy, 
-  Star, 
-  Camera, 
+import {
+  Trophy,
+  Star,
+  Camera,
   TrendingUp,
   Award,
   Medal,
-  Crown
+  Crown,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -18,15 +24,15 @@ export default async function RankingPage() {
 
   // Sort photographers by rating (highest first), then by shoot count
   const sortedPhotographers = photographers
-    .filter(p => p.isActive)
+    .filter((p) => p.isActive)
     .sort((a, b) => {
       const ratingA = a.rating || 0;
       const ratingB = b.rating || 0;
-      
+
       if (ratingA !== ratingB) {
         return ratingB - ratingA; // Higher rating first
       }
-      
+
       // If ratings are equal, sort by name
       return a.name.localeCompare(b.name);
     });
@@ -40,7 +46,11 @@ export default async function RankingPage() {
       case 2:
         return <Award className="h-5 w-5 text-amber-600" />;
       default:
-        return <span className="text-sm font-medium text-muted-foreground">#{index + 1}</span>;
+        return (
+          <span className="text-muted-foreground text-sm font-medium">
+            #{index + 1}
+          </span>
+        );
     }
   };
 
@@ -60,7 +70,9 @@ export default async function RankingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Photographer Ranking</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Photographer Ranking
+        </h1>
         <p className="text-muted-foreground">
           Top performing photographers based on ratings and performance
         </p>
@@ -70,7 +82,7 @@ export default async function RankingPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <div className="space-y-2 text-center">
-              <Trophy className="mx-auto h-12 w-12 text-muted-foreground" />
+              <Trophy className="text-muted-foreground mx-auto h-12 w-12" />
               <h3 className="text-lg font-semibold">No photographers found</h3>
               <p className="text-muted-foreground">
                 Add photographers to see the ranking
@@ -100,38 +112,48 @@ export default async function RankingPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-3">
-                  {sortedPhotographers.slice(0, 3).map((photographer, index) => (
-                    <div 
-                      key={photographer.id}
-                      className={`p-4 rounded-lg border-2 ${
-                        index === 0 ? 'border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20' :
-                        index === 1 ? 'border-gray-200 bg-gray-50 dark:bg-gray-950/20' :
-                        'border-amber-200 bg-amber-50 dark:bg-amber-950/20'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        {getRankIcon(index)}
-                        <Badge variant={getRankBadgeVariant(index)}>
-                          {index === 0 ? '1st Place' : index === 1 ? '2nd Place' : '3rd Place'}
-                        </Badge>
+                  {sortedPhotographers
+                    .slice(0, 3)
+                    .map((photographer, index) => (
+                      <div
+                        key={photographer.id}
+                        className={`rounded-lg border-2 p-4 ${
+                          index === 0
+                            ? "border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20"
+                            : index === 1
+                              ? "border-gray-200 bg-gray-50 dark:bg-gray-950/20"
+                              : "border-amber-200 bg-amber-50 dark:bg-amber-950/20"
+                        }`}
+                      >
+                        <div className="mb-2 flex items-center justify-between">
+                          {getRankIcon(index)}
+                          <Badge variant={getRankBadgeVariant(index)}>
+                            {index === 0
+                              ? "1st Place"
+                              : index === 1
+                                ? "2nd Place"
+                                : "3rd Place"}
+                          </Badge>
+                        </div>
+                        <h3 className="text-lg font-semibold">
+                          {photographer.name}
+                        </h3>
+                        <div className="mt-1 flex items-center space-x-1">
+                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          <span className="text-sm font-medium">
+                            {photographer.rating?.toFixed(1) || "0.0"}
+                          </span>
+                        </div>
+                        <div className="mt-2">
+                          <Link
+                            href={`/dashboard/photographers/${photographer.id}`}
+                            className="text-primary text-sm hover:underline"
+                          >
+                            View Profile →
+                          </Link>
+                        </div>
                       </div>
-                      <h3 className="font-semibold text-lg">{photographer.name}</h3>
-                      <div className="flex items-center space-x-1 mt-1">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm font-medium">
-                          {photographer.rating?.toFixed(1) || "0.0"}
-                        </span>
-                      </div>
-                      <div className="mt-2">
-                        <Link 
-                          href={`/dashboard/photographers/${photographer.id}`}
-                          className="text-sm text-primary hover:underline"
-                        >
-                          View Profile →
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </CardContent>
             </Card>
@@ -148,9 +170,9 @@ export default async function RankingPage() {
             <CardContent>
               <div className="space-y-3">
                 {sortedPhotographers.map((photographer, index) => (
-                  <div 
+                  <div
                     key={photographer.id}
-                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                    className="hover:bg-muted/50 flex items-center justify-between rounded-lg border p-3 transition-colors"
                   >
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-2">
@@ -163,27 +185,36 @@ export default async function RankingPage() {
                           {photographer.rating?.toFixed(1) || "0.0"}
                         </span>
                       </div>
-                      {photographer.specialties && photographer.specialties.length > 0 && (
-                        <div className="flex space-x-1">
-                          {photographer.specialties.slice(0, 2).map((specialty, specIndex) => (
-                            <Badge key={specIndex} variant="outline" className="text-xs">
-                              {specialty}
-                            </Badge>
-                          ))}
-                          {photographer.specialties.length > 2 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{photographer.specialties.length - 2} more
-                            </Badge>
-                          )}
-                        </div>
-                      )}
+                      {photographer.specialties &&
+                        photographer.specialties.length > 0 && (
+                          <div className="flex space-x-1">
+                            {photographer.specialties
+                              .slice(0, 2)
+                              .map((specialty, specIndex) => (
+                                <Badge
+                                  key={specIndex}
+                                  variant="outline"
+                                  className="text-xs"
+                                >
+                                  {specialty}
+                                </Badge>
+                              ))}
+                            {photographer.specialties.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{photographer.specialties.length - 2} more
+                              </Badge>
+                            )}
+                          </div>
+                        )}
                     </div>
                     <div className="flex items-center space-x-2">
                       <Badge variant="outline">
                         {photographer.isActive ? "Active" : "Inactive"}
                       </Badge>
                       <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/dashboard/photographers/${photographer.id}`}>
+                        <Link
+                          href={`/dashboard/photographers/${photographer.id}`}
+                        >
                           View
                         </Link>
                       </Button>

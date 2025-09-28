@@ -17,6 +17,8 @@ import {
   UserCheck,
   Edit,
   Type,
+  Trophy,
+  Award as AwardIcon,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -73,7 +75,7 @@ const navigation = [
   {
     name: "Photographer Ranking",
     href: "/dashboard/ranking",
-    icon: Award,
+    icon: Trophy,
   },
   {
     name: "Settings",
