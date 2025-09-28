@@ -66,47 +66,77 @@ async function main() {
 
   console.log("✅ Created sample clients");
 
-  // Create sample locations
-  const locations = [
+  // Get created clients to assign locations to them
+  const createdClients = await prisma.client.findMany();
+
+  // Create sample locations for specific clients
+  const locationData = [
     {
       name: "Downtown Studio",
       address: "123 Main St",
       city: "New York",
       state: "NY",
       country: "USA",
+      clientEmail: "john@example.com", // Link to John Doe
     },
     {
-      name: "Outdoor Park",
+      name: "Outdoor Garden",
       address: "456 Park Ave",
       city: "New York",
       state: "NY",
       country: "USA",
+      clientEmail: "john@example.com", // Link to John Doe
     },
     {
-      name: "Client Office",
+      name: "Corporate Office",
       address: "789 Business Blvd",
       city: "New York",
       state: "NY",
       country: "USA",
+      clientEmail: "jane@example.com", // Link to Jane Smith
     },
     {
-      name: "Event Venue",
+      name: "Main Office",
+      address: "100 Corporate Dr",
+      city: "New York",
+      state: "NY",
+      country: "USA",
+      clientEmail: "contact@abcrealestate.com", // Link to ABC Real Estate
+    },
+    {
+      name: "Event Hall",
       address: "321 Event St",
       city: "New York",
       state: "NY",
       country: "USA",
+      clientEmail: "info@xyzevents.com", // Link to XYZ Events
     },
   ];
 
-  for (const location of locations) {
-    await prisma.location.upsert({
-      where: { name: location.name },
-      update: {},
-      create: location,
-    });
+  for (const location of locationData) {
+    const client = createdClients.find((c) => c.email === location.clientEmail);
+    if (client) {
+      await prisma.location.upsert({
+        where: {
+          name_clientId: {
+            name: location.name,
+            clientId: client.id,
+          },
+        },
+        update: {},
+        create: {
+          name: location.name,
+          address: location.address,
+          city: location.city,
+          state: location.state,
+          country: location.country,
+          clientId: client.id,
+        },
+      });
+    }
   }
 
-  console.log("✅ Created sample locations");
+  console.log("✅ Created sample locations for clients");
 
   // Create sample photographers
   const photographers = [
