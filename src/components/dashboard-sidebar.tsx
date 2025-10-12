@@ -27,6 +27,11 @@ const navigation = [
     icon: Camera,
   },
   {
+    name: "Clusters",
+    href: "/dashboard/clusters",
+    icon: Layers,
+  },
+  {
     name: "Shoots",
     href: "/dashboard/shoots",
     icon: Calendar,
@@ -54,11 +59,6 @@ const navigation = [
     name: "Shoot Types",
     href: "/dashboard/shoot-types",
     icon: Type,
-  },
-  {
-    name: "Clusters",
-    href: "/dashboard/clusters",
-    icon: Layers,
   },
   // {
   //   name: "Coupons",

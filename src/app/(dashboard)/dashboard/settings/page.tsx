@@ -1,3 +1,12 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import {
+  getCurrentUser,
+  updateUserProfile,
+  changePassword,
+} from "@/server/actions/user-actions";
 import {
   Card,
   CardContent,
@@ -8,31 +17,107 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import {
-  User,
-  Bell,
-  Shield,
-  Palette,
-  Database,
-  Download,
-  Upload,
-  Trash2,
-} from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { User, Shield, CheckCircle } from "lucide-react";
 
 export default function SettingsPage() {
+  const router = useRouter();
+
+  // Profile state
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [profileSuccess, setProfileSuccess] = useState("");
+
+  // Password state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
+
+  // Load user data
+  useEffect(() => {
+    async function loadUserData() {
+      try {
+        const user = await getCurrentUser();
+        if (user) {
+          setName(user.name ?? "");
+          setEmail(user.email ?? "");
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      }
+    }
+
+    void loadUserData();
+  }, []);
+
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileLoading(true);
+    setProfileError("");
+    setProfileSuccess("");
+
+    try {
+      const formData = new FormData();
+      formData.append("name", name);
+
+      const result = await updateUserProfile(formData);
+      setProfileSuccess(result.message);
+
+      // Refresh to update name in header
+      router.refresh();
+    } catch (error) {
+      setProfileError(
+        error instanceof Error ? error.message : "Failed to update profile",
+      );
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordLoading(true);
+    setPasswordError("");
+    setPasswordSuccess("");
+
+    try {
+      const formData = new FormData();
+      formData.append("currentPassword", currentPassword);
+      formData.append("newPassword", newPassword);
+      formData.append("confirmPassword", confirmPassword);
+
+      const result = await changePassword(formData);
+      setPasswordSuccess(result.message);
+
+      // Clear password fields
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      setPasswordError(
+        error instanceof Error ? error.message : "Failed to change password",
+      );
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
         <p className="text-muted-foreground">
-          Manage your photography core system settings
+          Manage your account settings and preferences
         </p>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid gap-6 lg:grid-cols-2">
         {/* Profile Settings */}
         <Card>
           <CardHeader>
@@ -40,171 +125,59 @@ export default function SettingsPage() {
               <User className="h-5 w-5" />
               Profile Settings
             </CardTitle>
-            <CardDescription>
-              Update your personal information and preferences
-            </CardDescription>
+            <CardDescription>Update your personal information</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
+          <CardContent>
+            <form onSubmit={handleProfileUpdate} className="space-y-4">
+              {profileError && (
+                <Alert variant="destructive">
+                  <AlertDescription>{profileError}</AlertDescription>
+                </Alert>
+              )}
+              {profileSuccess && (
+                <Alert className="border-green-600 bg-green-50 text-green-900 dark:bg-green-950 dark:text-green-100">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription>{profileSuccess}</AlertDescription>
+                </Alert>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" placeholder="Your full name" />
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your full name"
+                  required
+                />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="your@email.com" />
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  placeholder="your@email.com"
+                  disabled
+                  className="bg-muted cursor-not-allowed"
+                />
+                <p className="text-muted-foreground text-xs">
+                  Email cannot be changed as it is used for login
+                </p>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="bio">Bio</Label>
-              <Textarea
-                id="bio"
-                placeholder="Tell us about yourself..."
-                rows={3}
-              />
-            </div>
-            <Button>Save Changes</Button>
-          </CardContent>
-        </Card>
 
-        {/* Notification Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Notifications
-            </CardTitle>
-            <CardDescription>
-              Configure how you receive notifications
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Email Notifications</Label>
-                <p className="text-muted-foreground text-sm">
-                  Receive notifications via email
-                </p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Shoot Reminders</Label>
-                <p className="text-muted-foreground text-sm">
-                  Get reminded about upcoming shoots
-                </p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Team Updates</Label>
-                <p className="text-muted-foreground text-sm">
-                  Notifications about team changes
-                </p>
-              </div>
-              <Switch />
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Client Updates</Label>
-                <p className="text-muted-foreground text-sm">
-                  Notifications about client activities
-                </p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Appearance Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Palette className="h-5 w-5" />
-              Appearance
-            </CardTitle>
-            <CardDescription>
-              Customize the look and feel of your dashboard
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Theme</Label>
-              <div className="flex space-x-2">
-                <Button variant="outline" size="sm">
-                  Light
-                </Button>
-                <Button variant="outline" size="sm">
-                  Dark
-                </Button>
-                <Button variant="outline" size="sm">
-                  System
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Language</Label>
-              <select className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50">
-                <option value="en">English</option>
-                <option value="es">Spanish</option>
-                <option value="fr">French</option>
-                <option value="de">German</option>
-              </select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Data Management */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              Data Management
-            </CardTitle>
-            <CardDescription>
-              Manage your data and system backups
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label>Export Data</Label>
+                <Label>Account Type</Label>
                 <p className="text-muted-foreground text-sm">
-                  Download all your data as a backup
+                  Administrator Account
                 </p>
-                <Button variant="outline" className="w-full">
-                  <Download className="mr-2 h-4 w-4" />
-                  Export All Data
-                </Button>
               </div>
-              <div className="space-y-2">
-                <Label>Import Data</Label>
-                <p className="text-muted-foreground text-sm">
-                  Import data from a backup file
-                </p>
-                <Button variant="outline" className="w-full">
-                  <Upload className="mr-2 h-4 w-4" />
-                  Import Data
-                </Button>
-              </div>
-            </div>
-            <Separator />
-            <div className="space-y-2">
-              <Label>Reset System</Label>
-              <p className="text-muted-foreground text-sm">
-                This will delete all data and reset the system to default
-                settings
-              </p>
-              <Button variant="destructive" className="w-full">
-                <Trash2 className="mr-2 h-4 w-4" />
-                Reset System
+
+              <Button type="submit" disabled={profileLoading}>
+                {profileLoading ? "Saving..." : "Save Changes"}
               </Button>
-            </div>
+            </form>
           </CardContent>
         </Card>
 
@@ -215,40 +188,100 @@ export default function SettingsPage() {
               <Shield className="h-5 w-5" />
               Security
             </CardTitle>
-            <CardDescription>
-              Manage your account security and privacy
-            </CardDescription>
+            <CardDescription>Manage your account security</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Change Password</Label>
-              <div className="grid gap-4 md:grid-cols-2">
-                <Input type="password" placeholder="Current password" />
-                <Input type="password" placeholder="New password" />
+          <CardContent>
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              {passwordError && (
+                <Alert variant="destructive">
+                  <AlertDescription>{passwordError}</AlertDescription>
+                </Alert>
+              )}
+              {passwordSuccess && (
+                <Alert className="border-green-600 bg-green-50 text-green-900 dark:bg-green-950 dark:text-green-100">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription>{passwordSuccess}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="currentPassword">Current Password</Label>
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                  required
+                />
               </div>
-              <Button variant="outline">Update Password</Button>
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Two-Factor Authentication</Label>
-                <p className="text-muted-foreground text-sm">
-                  Add an extra layer of security to your account
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">New Password</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  required
+                  minLength={6}
+                />
+                <p className="text-muted-foreground text-xs">
+                  Must be at least 6 characters
                 </p>
               </div>
-              <Switch />
-            </div>
-            <Separator />
-            <div className="space-y-2">
-              <Label>Active Sessions</Label>
-              <p className="text-muted-foreground text-sm">
-                Manage your active login sessions
-              </p>
-              <Button variant="outline">View Sessions</Button>
-            </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  required
+                  minLength={6}
+                />
+              </div>
+
+              <Button type="submit" disabled={passwordLoading}>
+                {passwordLoading ? "Updating..." : "Change Password"}
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </div>
+
+      {/* System Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle>System Information</CardTitle>
+          <CardDescription>Photography Core system details</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div>
+              <p className="text-sm font-medium">Version</p>
+              <p className="text-muted-foreground">1.0.0</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium">Environment</p>
+              <p className="text-muted-foreground">
+                {process.env.NODE_ENV === "production"
+                  ? "Production"
+                  : "Development"}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium">Database</p>
+              <p className="text-muted-foreground">PostgreSQL</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
