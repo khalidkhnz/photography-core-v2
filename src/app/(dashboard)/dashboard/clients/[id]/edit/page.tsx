@@ -34,6 +34,7 @@ const updateClientSchema = z.object({
   email: z.string().email("Invalid email address").optional().or(z.literal("")),
   phone: z.string().optional(),
   address: z.string().optional(),
+  poc: z.string().optional(),
 });
 
 type UpdateClientFormData = z.infer<typeof updateClientSchema>;
@@ -56,6 +57,7 @@ export default function EditClientPage({ params }: PageProps) {
       email: "",
       phone: "",
       address: "",
+      poc: "",
     },
   });
 
@@ -77,6 +79,7 @@ export default function EditClientPage({ params }: PageProps) {
         form.setValue("email", clientData.email ?? "");
         form.setValue("phone", clientData.phone ?? "");
         form.setValue("address", clientData.address ?? "");
+        form.setValue("poc", clientData.poc ?? "");
       } catch (error) {
         console.error("Error fetching client data:", error);
         setError("Failed to load client data");
@@ -99,6 +102,7 @@ export default function EditClientPage({ params }: PageProps) {
       if (data.email) formData.append("email", data.email);
       if (data.phone) formData.append("phone", data.phone);
       if (data.address) formData.append("address", data.address);
+      if (data.poc) formData.append("poc", data.poc);
 
       await updateClient(clientId, formData);
       void router.push("/dashboard/clients");
@@ -208,6 +212,20 @@ export default function EditClientPage({ params }: PageProps) {
                         rows={3}
                         {...field}
                       />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="poc"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Point of Contact (POC)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Jane Smith" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

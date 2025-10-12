@@ -33,6 +33,7 @@ const createClientSchema = z.object({
   email: z.string().email("Invalid email address").optional().or(z.literal("")),
   phone: z.string().optional(),
   address: z.string().optional(),
+  poc: z.string().optional(),
 });
 
 type CreateClientFormData = z.infer<typeof createClientSchema>;
@@ -49,6 +50,7 @@ export default function CreateClientPage() {
       email: "",
       phone: "",
       address: "",
+      poc: "",
     },
   });
 
@@ -63,6 +65,7 @@ export default function CreateClientPage() {
       if (data.email) formData.append("email", data.email);
       if (data.phone) formData.append("phone", data.phone);
       if (data.address) formData.append("address", data.address);
+      if (data.poc) formData.append("poc", data.poc);
 
       await createClient(formData);
       void router.push("/dashboard/clients");
@@ -163,6 +166,20 @@ export default function CreateClientPage() {
                         rows={3}
                         {...field}
                       />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="poc"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Point of Contact (POC)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Jane Smith" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

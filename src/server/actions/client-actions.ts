@@ -9,6 +9,7 @@ const createClientSchema = z.object({
   email: z.string().email().optional(),
   phone: z.string().optional(),
   address: z.string().optional(),
+  poc: z.string().optional(),
 });
 
 export async function createClient(formData: FormData) {
@@ -18,6 +19,7 @@ export async function createClient(formData: FormData) {
       email: (formData.get("email") as string) || undefined,
       phone: (formData.get("phone") as string) || undefined,
       address: (formData.get("address") as string) || undefined,
+      poc: (formData.get("poc") as string) || undefined,
     };
 
     const validatedData = createClientSchema.parse(rawData);
@@ -90,6 +92,7 @@ export async function updateClient(id: string, formData: FormData) {
       email: (formData.get("email") as string) || undefined,
       phone: (formData.get("phone") as string) || undefined,
       address: (formData.get("address") as string) || undefined,
+      poc: (formData.get("poc") as string) || undefined,
     };
 
     const validatedData = createClientSchema.parse(rawData);
