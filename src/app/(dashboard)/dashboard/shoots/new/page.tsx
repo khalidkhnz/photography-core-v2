@@ -93,11 +93,17 @@ export default function CreateShootPage() {
       clientId: "",
       shootTypeId: "",
       locationId: "",
+      projectName: "",
+      remarks: "",
+      editId: "",
       overallDeliverables: "",
       shootStartDate: "",
       shootEndDate: "",
       photographerNotes: "",
       editorNotes: "",
+      photographyCost: "",
+      travelCost: "",
+      editingCost: "",
       photographerIds: [],
       editorIds: [],
     },
@@ -165,6 +171,9 @@ export default function CreateShootPage() {
       formData.append("clientId", data.clientId);
       formData.append("shootTypeId", data.shootTypeId);
       if (data.locationId) formData.append("locationId", data.locationId);
+      if (data.projectName) formData.append("projectName", data.projectName);
+      if (data.remarks) formData.append("remarks", data.remarks);
+      if (data.editId) formData.append("editId", data.editId);
       if (data.overallDeliverables)
         formData.append("overallDeliverables", data.overallDeliverables);
       if (data.shootStartDate)
@@ -173,6 +182,10 @@ export default function CreateShootPage() {
       if (data.photographerNotes)
         formData.append("photographerNotes", data.photographerNotes);
       if (data.editorNotes) formData.append("editorNotes", data.editorNotes);
+      if (data.photographyCost)
+        formData.append("photographyCost", data.photographyCost);
+      if (data.travelCost) formData.append("travelCost", data.travelCost);
+      if (data.editingCost) formData.append("editingCost", data.editingCost);
 
       // Add photographer IDs
       if (data.photographerIds) {
@@ -345,6 +358,55 @@ export default function CreateShootPage() {
                             Please select a client to see available locations
                           </p>
                         )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="projectName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Project Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter project name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="editId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Edit ID</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Edit ID (per deliverable)"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="remarks"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Remarks</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Any additional remarks..."
+                            rows={3}
+                            {...field}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -575,6 +637,86 @@ export default function CreateShootPage() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Cost Tracking Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Cost Tracking</CardTitle>
+                <CardDescription>
+                  Track photography and editing costs
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <FormField
+                    control={form.control}
+                    name="photographyCost"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Photography Cost ($)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="travelCost"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Travel Cost ($)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="editingCost"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Editing Cost ($)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="bg-muted rounded-md p-3">
+                  <p className="text-sm">
+                    <strong>Total Cost:</strong> $
+                    {(
+                      (parseFloat(form.watch("photographyCost") ?? "0") ?? 0) +
+                      (parseFloat(form.watch("travelCost") ?? "0") ?? 0) +
+                      (parseFloat(form.watch("editingCost") ?? "0") ?? 0)
+                    ).toFixed(2)}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
 
             <div className="flex justify-end space-x-4">
               <Button type="button" variant="outline" asChild>

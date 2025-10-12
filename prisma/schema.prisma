@@ -101,15 +101,22 @@ model Editor {
 
 model Shoot {
     id                    String   @id @default(cuid())
-    shootId               String   @unique // Custom shoot ID (e.g., RE-2024-001)
+    shootId               String   @unique // Custom shoot ID (e.g., RE-2024-001), editable by admin
     clientId              String
     shootTypeId           String
     locationId            String?
+    projectName           String?  // User-defined project name
+    remarks               String?  // Free text remarks
+    editId                String?  // Per deliverable basis linked to shoot ID
     overallDeliverables   String?
     shootStartDate        DateTime?
     shootEndDate          DateTime?
     photographerNotes     String?
     editorNotes           String?
+    // Cost tracking fields
+    photographyCost       Float?   // Shoot cost
+    travelCost            Float?   // Travel cost (separate from photography)
+    editingCost           Float?   // Editing cost
     status                String   @default("planned") // planned, in_progress, completed, cancelled
     createdAt             DateTime @default(now())
     updatedAt             DateTime @updatedAt
@@ -126,6 +133,7 @@ model Shoot {
     @@index([shootTypeId])
     @@index([status])
     @@index([shootStartDate])
+    @@index([projectName])
 }
 
 // Junction table for many-to-many relationship between shoots and photographers

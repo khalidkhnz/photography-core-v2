@@ -10,14 +10,12 @@ import Assets from "@/assets/assets";
 import {
   Camera,
   Users,
-  Tag,
   Calendar,
   Settings,
   LogOut,
   UserCheck,
   Edit,
   Type,
-  Trophy,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -56,16 +54,16 @@ const navigation = [
     href: "/dashboard/shoot-types",
     icon: Type,
   },
-  {
-    name: "Coupons",
-    href: "/dashboard/coupons",
-    icon: Tag,
-  },
-  {
-    name: "Photographer Ranking",
-    href: "/dashboard/ranking",
-    icon: Trophy,
-  },
+  // {
+  //   name: "Coupons",
+  //   href: "/dashboard/coupons",
+  //   icon: Tag,
+  // },
+  // {
+  //   name: "Photographer Ranking",
+  //   href: "/dashboard/ranking",
+  //   icon: Trophy,
+  // },
   {
     name: "Settings",
     href: "/dashboard/settings",

@@ -123,6 +123,18 @@ export default async function ViewShootPage({ params }: PageProps) {
                     )}
                   </div>
                 )}
+                {shoot.projectName && (
+                  <div>
+                    <p className="text-sm font-medium">Project Name</p>
+                    <p className="text-muted-foreground">{shoot.projectName}</p>
+                  </div>
+                )}
+                {shoot.editId && (
+                  <div>
+                    <p className="text-sm font-medium">Edit ID</p>
+                    <p className="text-muted-foreground">{shoot.editId}</p>
+                  </div>
+                )}
               </div>
 
               {shoot.overallDeliverables && (
@@ -131,6 +143,13 @@ export default async function ViewShootPage({ params }: PageProps) {
                   <p className="text-muted-foreground">
                     {shoot.overallDeliverables}
                   </p>
+                </div>
+              )}
+
+              {shoot.remarks && (
+                <div>
+                  <p className="text-sm font-medium">Remarks</p>
+                  <p className="text-muted-foreground">{shoot.remarks}</p>
                 </div>
               )}
             </CardContent>
@@ -246,6 +265,58 @@ export default async function ViewShootPage({ params }: PageProps) {
                     <p className="text-muted-foreground">{shoot.editorNotes}</p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Cost Tracking */}
+          {(shoot.photographyCost !== null ||
+            shoot.travelCost !== null ||
+            shoot.editingCost !== null) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Cost Tracking</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-3">
+                  {shoot.photographyCost !== null && (
+                    <div>
+                      <p className="text-sm font-medium">Photography Cost</p>
+                      <p className="text-lg font-semibold">
+                        ${shoot.photographyCost.toFixed(2)}
+                      </p>
+                    </div>
+                  )}
+                  {shoot.travelCost !== null && (
+                    <div>
+                      <p className="text-sm font-medium">Travel Cost</p>
+                      <p className="text-lg font-semibold">
+                        ${shoot.travelCost.toFixed(2)}
+                      </p>
+                    </div>
+                  )}
+                  {shoot.editingCost !== null && (
+                    <div>
+                      <p className="text-sm font-medium">Editing Cost</p>
+                      <p className="text-lg font-semibold">
+                        ${shoot.editingCost.toFixed(2)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Total Cost</p>
+                    <p className="text-xl font-bold">
+                      $
+                      {(
+                        (shoot.photographyCost ?? 0) +
+                        (shoot.travelCost ?? 0) +
+                        (shoot.editingCost ?? 0)
+                      ).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}

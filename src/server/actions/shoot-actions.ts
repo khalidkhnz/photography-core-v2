@@ -9,11 +9,37 @@ const createShootSchema = z.object({
   clientId: z.string().min(1, "Client is required"),
   shootTypeId: z.string().min(1, "Shoot type is required"),
   locationId: z.string().optional(),
+  projectName: z.string().optional(),
+  remarks: z.string().optional(),
+  editId: z.string().optional(),
   overallDeliverables: z.string().optional(),
   shootStartDate: z.string().optional(),
   shootEndDate: z.string().optional(),
   photographerNotes: z.string().optional(),
   editorNotes: z.string().optional(),
+  photographyCost: z.string().optional(),
+  travelCost: z.string().optional(),
+  editingCost: z.string().optional(),
+  photographerIds: z.array(z.string()).optional(),
+  editorIds: z.array(z.string()).optional(),
+});
+
+const updateShootSchema = z.object({
+  shootId: z.string().min(1, "Shoot ID is required"),
+  clientId: z.string().min(1, "Client is required"),
+  shootTypeId: z.string().min(1, "Shoot type is required"),
+  locationId: z.string().optional(),
+  projectName: z.string().optional(),
+  remarks: z.string().optional(),
+  editId: z.string().optional(),
+  overallDeliverables: z.string().optional(),
+  shootStartDate: z.string().optional(),
+  shootEndDate: z.string().optional(),
+  photographerNotes: z.string().optional(),
+  editorNotes: z.string().optional(),
+  photographyCost: z.string().optional(),
+  travelCost: z.string().optional(),
+  editingCost: z.string().optional(),
   photographerIds: z.array(z.string()).optional(),
   editorIds: z.array(z.string()).optional(),
 });
@@ -33,6 +59,9 @@ export async function createShoot(formData: FormData) {
       clientId: formData.get("clientId") as string,
       shootTypeId: formData.get("shootTypeId") as string,
       locationId: (formData.get("locationId") as string) || undefined,
+      projectName: (formData.get("projectName") as string) || undefined,
+      remarks: (formData.get("remarks") as string) || undefined,
+      editId: (formData.get("editId") as string) || undefined,
       overallDeliverables:
         (formData.get("overallDeliverables") as string) || undefined,
       shootStartDate: (formData.get("shootStartDate") as string) || undefined,
@@ -40,6 +69,9 @@ export async function createShoot(formData: FormData) {
       photographerNotes:
         (formData.get("photographerNotes") as string) || undefined,
       editorNotes: (formData.get("editorNotes") as string) || undefined,
+      photographyCost: (formData.get("photographyCost") as string) || undefined,
+      travelCost: (formData.get("travelCost") as string) || undefined,
+      editingCost: (formData.get("editingCost") as string) || undefined,
       photographerIds: formData.getAll("photographerIds") as string[],
       editorIds: formData.getAll("editorIds") as string[],
     };
@@ -73,6 +105,17 @@ export async function createShoot(formData: FormData) {
 
     const validatedData = createShootSchema.parse(rawData);
 
+    // Convert cost strings to floats
+    const photographyCostFloat = validatedData.photographyCost
+      ? parseFloat(validatedData.photographyCost)
+      : undefined;
+    const travelCostFloat = validatedData.travelCost
+      ? parseFloat(validatedData.travelCost)
+      : undefined;
+    const editingCostFloat = validatedData.editingCost
+      ? parseFloat(validatedData.editingCost)
+      : undefined;
+
     // Create the shoot
     const shoot = await db.shoot.create({
       data: {
@@ -80,6 +123,9 @@ export async function createShoot(formData: FormData) {
         clientId: validatedData.clientId,
         shootTypeId: validatedData.shootTypeId,
         locationId: validatedData.locationId,
+        projectName: validatedData.projectName,
+        remarks: validatedData.remarks,
+        editId: validatedData.editId,
         overallDeliverables: validatedData.overallDeliverables,
         shootStartDate: validatedData.shootStartDate
           ? new Date(validatedData.shootStartDate)
@@ -89,6 +135,9 @@ export async function createShoot(formData: FormData) {
           : undefined,
         photographerNotes: validatedData.photographerNotes,
         editorNotes: validatedData.editorNotes,
+        photographyCost: photographyCostFloat,
+        travelCost: travelCostFloat,
+        editingCost: editingCostFloat,
         status: "planned",
       },
     });
@@ -163,9 +212,13 @@ export async function updateShoot(id: string, formData: FormData) {
     const rawEditorIds = formData.getAll("editorIds") as string[];
 
     const rawData = {
+      shootId: formData.get("shootId") as string,
       clientId: formData.get("clientId") as string,
       shootTypeId: formData.get("shootTypeId") as string,
       locationId: (formData.get("locationId") as string) || undefined,
+      projectName: (formData.get("projectName") as string) || undefined,
+      remarks: (formData.get("remarks") as string) || undefined,
+      editId: (formData.get("editId") as string) || undefined,
       overallDeliverables:
         (formData.get("overallDeliverables") as string) || undefined,
       shootStartDate: (formData.get("shootStartDate") as string) || undefined,
@@ -173,20 +226,54 @@ export async function updateShoot(id: string, formData: FormData) {
       photographerNotes:
         (formData.get("photographerNotes") as string) || undefined,
       editorNotes: (formData.get("editorNotes") as string) || undefined,
+      photographyCost: (formData.get("photographyCost") as string) || undefined,
+      travelCost: (formData.get("travelCost") as string) || undefined,
+      editingCost: (formData.get("editingCost") as string) || undefined,
       photographerIds:
         rawPhotographerIds.length > 0 ? rawPhotographerIds : undefined,
       editorIds: rawEditorIds.length > 0 ? rawEditorIds : undefined,
     };
 
-    const validatedData = createShootSchema.parse(rawData);
+    const validatedData = updateShootSchema.parse(rawData);
+
+    // Convert cost strings to floats
+    const photographyCostFloat = validatedData.photographyCost
+      ? parseFloat(validatedData.photographyCost)
+      : undefined;
+    const travelCostFloat = validatedData.travelCost
+      ? parseFloat(validatedData.travelCost)
+      : undefined;
+    const editingCostFloat = validatedData.editingCost
+      ? parseFloat(validatedData.editingCost)
+      : undefined;
+
+    // Check if shootId is being changed and ensure uniqueness
+    const currentShoot = await db.shoot.findUnique({
+      where: { id },
+    });
+
+    if (currentShoot && currentShoot.shootId !== validatedData.shootId) {
+      const existingShoot = await db.shoot.findUnique({
+        where: { shootId: validatedData.shootId },
+      });
+      if (existingShoot) {
+        throw new Error(
+          "Shoot ID already exists. Please choose a different ID.",
+        );
+      }
+    }
 
     // Update the shoot
     await db.shoot.update({
       where: { id },
       data: {
+        shootId: validatedData.shootId,
         clientId: validatedData.clientId,
         shootTypeId: validatedData.shootTypeId,
         locationId: validatedData.locationId,
+        projectName: validatedData.projectName,
+        remarks: validatedData.remarks,
+        editId: validatedData.editId,
         overallDeliverables: validatedData.overallDeliverables,
         shootStartDate: validatedData.shootStartDate
           ? new Date(validatedData.shootStartDate)
@@ -196,6 +283,9 @@ export async function updateShoot(id: string, formData: FormData) {
           : undefined,
         photographerNotes: validatedData.photographerNotes,
         editorNotes: validatedData.editorNotes,
+        photographyCost: photographyCostFloat,
+        travelCost: travelCostFloat,
+        editingCost: editingCostFloat,
       },
     });
 

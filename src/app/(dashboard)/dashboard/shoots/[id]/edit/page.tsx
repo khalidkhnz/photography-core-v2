@@ -12,8 +12,8 @@ import { getLocationsByClient } from "@/server/actions/location-actions";
 import { getPhotographers } from "@/server/actions/photographer-actions";
 import { getEditors } from "@/server/actions/editor-actions";
 import {
-  createShootSchema,
-  type CreateShootFormData,
+  updateShootSchema,
+  type UpdateShootFormData,
 } from "@/lib/validations/shoot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,6 +77,27 @@ interface Editor {
   email?: string | null;
 }
 
+// Extended Shoot type with new fields
+interface ExtendedShoot {
+  shootId: string;
+  clientId: string;
+  shootTypeId: string;
+  locationId: string | null;
+  projectName?: string | null;
+  remarks?: string | null;
+  editId?: string | null;
+  overallDeliverables?: string | null;
+  shootStartDate?: Date | null;
+  shootEndDate?: Date | null;
+  photographerNotes?: string | null;
+  editorNotes?: string | null;
+  photographyCost?: number | null;
+  travelCost?: number | null;
+  editingCost?: number | null;
+  shootPhotographers: Array<{ photographerId: string }>;
+  shootEditors: Array<{ editorId: string }>;
+}
+
 interface PageProps {
   params: Promise<{ id: string }>;
 }
@@ -93,17 +114,24 @@ export default function EditShootPage({ params }: PageProps) {
   const [shootId, setShootId] = useState<string>("");
   const router = useRouter();
 
-  const form = useForm<CreateShootFormData>({
-    resolver: zodResolver(createShootSchema),
+  const form = useForm<UpdateShootFormData>({
+    resolver: zodResolver(updateShootSchema),
     defaultValues: {
+      shootId: "",
       clientId: "",
       shootTypeId: "",
       locationId: "",
+      projectName: "",
+      remarks: "",
+      editId: "",
       overallDeliverables: "",
       shootStartDate: "",
       shootEndDate: "",
       photographerNotes: "",
       editorNotes: "",
+      photographyCost: "",
+      travelCost: "",
+      editingCost: "",
       photographerIds: [],
       editorIds: [],
     },
@@ -144,35 +172,61 @@ export default function EditShootPage({ params }: PageProps) {
         setPhotographers(photographersData);
         setEditors(editorsData);
 
+        // Cast shootData to ExtendedShoot to access new fields
+        const extendedShootData = shootData as unknown as ExtendedShoot;
+
         // Set form values
-        form.setValue("clientId", shootData.clientId);
-        form.setValue("shootTypeId", shootData.shootTypeId);
-        form.setValue("locationId", shootData.locationId ?? "");
+        form.setValue("shootId", extendedShootData.shootId);
+        form.setValue("clientId", extendedShootData.clientId);
+        form.setValue("shootTypeId", extendedShootData.shootTypeId);
+        form.setValue("locationId", extendedShootData.locationId ?? "");
+        form.setValue("projectName", extendedShootData.projectName ?? "");
+        form.setValue("remarks", extendedShootData.remarks ?? "");
+        form.setValue("editId", extendedShootData.editId ?? "");
         form.setValue(
           "overallDeliverables",
-          shootData.overallDeliverables ?? "",
+          extendedShootData.overallDeliverables ?? "",
         );
         form.setValue(
           "shootStartDate",
-          shootData.shootStartDate
-            ? new Date(shootData.shootStartDate).toISOString().slice(0, 16)
+          extendedShootData.shootStartDate
+            ? new Date(extendedShootData.shootStartDate)
+                .toISOString()
+                .slice(0, 16)
             : "",
         );
         form.setValue(
           "shootEndDate",
-          shootData.shootEndDate
-            ? new Date(shootData.shootEndDate).toISOString().slice(0, 16)
+          extendedShootData.shootEndDate
+            ? new Date(extendedShootData.shootEndDate)
+                .toISOString()
+                .slice(0, 16)
             : "",
         );
-        form.setValue("photographerNotes", shootData.photographerNotes ?? "");
-        form.setValue("editorNotes", shootData.editorNotes ?? "");
+        form.setValue(
+          "photographerNotes",
+          extendedShootData.photographerNotes ?? "",
+        );
+        form.setValue("editorNotes", extendedShootData.editorNotes ?? "");
+        form.setValue(
+          "photographyCost",
+          extendedShootData.photographyCost?.toString() ?? "",
+        );
+        form.setValue(
+          "travelCost",
+          extendedShootData.travelCost?.toString() ?? "",
+        );
+        form.setValue(
+          "editingCost",
+          extendedShootData.editingCost?.toString() ?? "",
+        );
         form.setValue(
           "photographerIds",
-          shootData.shootPhotographers.map((sp) => sp.photographerId),
+          extendedShootData.shootPhotographers.map((sp) => sp.photographerId),
         );
         form.setValue(
           "editorIds",
-          shootData.shootEditors.map((se) => se.editorId),
+          extendedShootData.shootEditors.map((se) => se.editorId),
         );
 
         // Fetch locations for the client
@@ -219,16 +273,20 @@ export default function EditShootPage({ params }: PageProps) {
     void fetchClientLocations();
   }, [selectedClientId, form]);
 
-  const onSubmit = async (data: CreateShootFormData) => {
+  const onSubmit = async (data: UpdateShootFormData) => {
     setIsLoading(true);
     setError("");
 
     try {
       // Convert the form data to FormData for the server action
       const formData = new FormData();
+      formData.append("shootId", data.shootId);
       formData.append("clientId", data.clientId);
       formData.append("shootTypeId", data.shootTypeId);
       if (data.locationId) formData.append("locationId", data.locationId);
+      if (data.projectName) formData.append("projectName", data.projectName);
+      if (data.remarks) formData.append("remarks", data.remarks);
+      if (data.editId) formData.append("editId", data.editId);
       if (data.overallDeliverables)
         formData.append("overallDeliverables", data.overallDeliverables);
       if (data.shootStartDate)
@@ -237,6 +295,10 @@ export default function EditShootPage({ params }: PageProps) {
       if (data.photographerNotes)
         formData.append("photographerNotes", data.photographerNotes);
       if (data.editorNotes) formData.append("editorNotes", data.editorNotes);
+      if (data.photographyCost)
+        formData.append("photographyCost", data.photographyCost);
+      if (data.travelCost) formData.append("travelCost", data.travelCost);
+      if (data.editingCost) formData.append("editingCost", data.editingCost);
 
       // Add photographer IDs
       if (data.photographerIds) {
@@ -266,7 +328,7 @@ export default function EditShootPage({ params }: PageProps) {
   if (dataLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
+        <div className="border-primary mx-auto mb-4 flex h-8 w-8 animate-spin items-center justify-center rounded-full border-b-2"></div>
         <p className="text-muted-foreground">Loading shoot data...</p>
       </div>
     );
@@ -305,6 +367,23 @@ export default function EditShootPage({ params }: PageProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="shootId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Shoot ID *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter shoot ID" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        You can edit the auto-generated shoot ID
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="clientId"
@@ -405,6 +484,55 @@ export default function EditShootPage({ params }: PageProps) {
                           Please select a client to see available locations
                         </p>
                       )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="projectName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter project name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="editId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Edit ID</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Edit ID (per deliverable)"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="remarks"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Remarks</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Any additional remarks..."
+                          rows={3}
+                          {...field}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -633,6 +761,86 @@ export default function EditShootPage({ params }: PageProps) {
               </CardContent>
             </Card>
           </div>
+
+          {/* Cost Tracking Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Cost Tracking</CardTitle>
+              <CardDescription>
+                Track photography and editing costs
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-3">
+                <FormField
+                  control={form.control}
+                  name="photographyCost"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Photography Cost ($)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="travelCost"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Travel Cost ($)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="editingCost"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Editing Cost ($)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="bg-muted rounded-md p-3">
+                <p className="text-sm">
+                  <strong>Total Cost:</strong> $
+                  {(
+                    (parseFloat(form.watch("photographyCost") ?? "0") ?? 0) +
+                    (parseFloat(form.watch("travelCost") ?? "0") ?? 0) +
+                    (parseFloat(form.watch("editingCost") ?? "0") ?? 0)
+                  ).toFixed(2)}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="flex justify-end space-x-4">
             <Button type="button" variant="outline" asChild>
