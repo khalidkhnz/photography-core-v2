@@ -22,8 +22,8 @@ const createShootSchema = z.object({
   photographyCost: z.string().optional(),
   travelCost: z.string().optional(),
   editingCost: z.string().optional(),
-  photographerIds: z.array(z.string()).optional(),
-  editorIds: z.array(z.string()).optional(),
+  photographerIds: z.array(z.string()).optional(), // Will map to assignmentType: "photographer"
+  editorIds: z.array(z.string()).optional(), // Will map to assignmentType: "editor"
 });
 
 const updateShootSchema = z.object({
@@ -150,26 +150,35 @@ export async function createShoot(formData: FormData) {
       },
     });
 
-    // Add photographers if provided
+    // Add team members (photographers and editors)
+    const teamMembersToCreate = [];
+
     if (
       validatedData.photographerIds &&
       validatedData.photographerIds.length > 0
     ) {
-      await db.shootPhotographer.createMany({
-        data: validatedData.photographerIds.map((photographerId) => ({
+      teamMembersToCreate.push(
+        ...validatedData.photographerIds.map((userId) => ({
           shootId: shoot.id,
-          photographerId,
+          userId,
+          assignmentType: "photographer",
         })),
-      });
+      );
     }
 
-    // Add editors if provided
     if (validatedData.editorIds && validatedData.editorIds.length > 0) {
-      await db.shootEditor.createMany({
-        data: validatedData.editorIds.map((editorId) => ({
+      teamMembersToCreate.push(
+        ...validatedData.editorIds.map((userId) => ({
           shootId: shoot.id,
-          editorId,
+          userId,
+          assignmentType: "editor",
         })),
+      );
+    }
+
+    if (teamMembersToCreate.length > 0) {
+      await db.shootTeamMember.createMany({
+        data: teamMembersToCreate,
       });
     }
 
@@ -191,14 +200,9 @@ export async function getShoots() {
         client: true,
         shootType: true,
         location: true,
-        shootPhotographers: {
+        teamMembers: {
           include: {
-            photographer: true,
-          },
-        },
-        shootEditors: {
-          include: {
-            editor: true,
+            user: true,
           },
         },
       },
@@ -301,32 +305,39 @@ export async function updateShoot(id: string, formData: FormData) {
       },
     });
 
-    // Update photographers
-    await db.shootPhotographer.deleteMany({
+    // Update team members - delete all and recreate
+    await db.shootTeamMember.deleteMany({
       where: { shootId: id },
     });
+
+    const teamMembersToCreate = [];
+
     if (
       validatedData.photographerIds &&
       validatedData.photographerIds.length > 0
     ) {
-      await db.shootPhotographer.createMany({
-        data: validatedData.photographerIds.map((photographerId) => ({
+      teamMembersToCreate.push(
+        ...validatedData.photographerIds.map((userId) => ({
           shootId: id,
-          photographerId,
+          userId,
+          assignmentType: "photographer",
         })),
-      });
+      );
     }
 
-    // Update editors
-    await db.shootEditor.deleteMany({
-      where: { shootId: id },
-    });
     if (validatedData.editorIds && validatedData.editorIds.length > 0) {
-      await db.shootEditor.createMany({
-        data: validatedData.editorIds.map((editorId) => ({
+      teamMembersToCreate.push(
+        ...validatedData.editorIds.map((userId) => ({
           shootId: id,
-          editorId,
+          userId,
+          assignmentType: "editor",
         })),
+      );
+    }
+
+    if (teamMembersToCreate.length > 0) {
+      await db.shootTeamMember.createMany({
+        data: teamMembersToCreate,
       });
     }
 
@@ -392,14 +403,9 @@ export async function getShootById(id: string) {
         shootType: true,
         location: true,
         cluster: true,
-        shootPhotographers: {
+        teamMembers: {
           include: {
-            photographer: true,
-          },
-        },
-        shootEditors: {
-          include: {
-            editor: true,
+            user: true,
           },
         },
       },

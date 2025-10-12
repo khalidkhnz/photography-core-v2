@@ -8,8 +8,7 @@ import { createShoot } from "@/server/actions/shoot-actions";
 import { getClients } from "@/server/actions/client-actions";
 import { getShootTypes } from "@/server/actions/shoot-type-actions";
 import { getLocationsByClient } from "@/server/actions/location-actions";
-import { getPhotographers } from "@/server/actions/photographer-actions";
-import { getEditors } from "@/server/actions/editor-actions";
+import { getTeamMembers } from "@/server/actions/user-actions";
 import { getClusters } from "@/server/actions/cluster-actions";
 import {
   createShootSchema,
@@ -65,16 +64,14 @@ interface Location {
   address?: string | null;
 }
 
-interface Photographer {
+interface TeamMember {
   id: string;
-  name: string;
+  name: string | null;
   email?: string | null;
-}
-
-interface Editor {
-  id: string;
-  name: string;
-  email?: string | null;
+  roles: string[];
+  specialties: string[];
+  rating?: number | null;
+  isActive: boolean;
 }
 
 interface Cluster {
@@ -89,8 +86,7 @@ export default function CreateShootPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [shootTypes, setShootTypes] = useState<ShootType[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
-  const [photographers, setPhotographers] = useState<Photographer[]>([]);
-  const [editors, setEditors] = useState<Editor[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const router = useRouter();
@@ -127,25 +123,23 @@ export default function CreateShootPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [
-          clientsData,
-          shootTypesData,
-          photographersData,
-          editorsData,
-          clustersData,
-        ] = await Promise.all([
-          getClients(),
-          getShootTypes(),
-          getPhotographers(),
-          getEditors(),
-          getClusters(),
-        ]);
+        const [clientsData, shootTypesData, teamMembersData, clustersData] =
+          await Promise.all([
+            getClients(),
+            getShootTypes(),
+            getTeamMembers(["photographer", "editor"]),
+            getClusters(),
+          ]);
 
         setClients(clientsData);
         setShootTypes(shootTypesData);
-        setPhotographers(photographersData);
-        setEditors(editorsData);
+        setTeamMembers(teamMembersData);
         setClusters(clustersData);
+        console.log(
+          "Team members loaded:",
+          teamMembersData.length,
+          teamMembersData,
+        );
         console.log("Clusters loaded:", clustersData.length, clustersData);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -234,7 +228,7 @@ export default function CreateShootPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="relative space-y-6 overflow-y-auto">
       <div className="flex items-center space-x-4">
         <Button variant="ghost" size="icon" asChild>
           <Link href="/dashboard/shoots">
@@ -591,45 +585,55 @@ export default function CreateShootPage() {
                             Select the photographers for this shoot
                           </FormDescription>
                         </div>
-                        {photographers.map((photographer) => (
-                          <FormField
-                            key={photographer.id}
-                            control={form.control}
-                            name="photographerIds"
-                            render={({ field }) => {
-                              return (
-                                <FormItem
-                                  key={photographer.id}
-                                  className="flex flex-row items-start space-y-0 space-x-3"
-                                >
-                                  <FormControl>
-                                    <Checkbox
-                                      checked={field.value?.includes(
-                                        photographer.id,
+                        {teamMembers
+                          .filter((member) =>
+                            member.roles.includes("photographer"),
+                          )
+                          .map((member) => (
+                            <FormField
+                              key={member.id}
+                              control={form.control}
+                              name="photographerIds"
+                              render={({ field }) => {
+                                return (
+                                  <FormItem
+                                    key={member.id}
+                                    className="flex flex-row items-start space-y-0 space-x-3"
+                                  >
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value?.includes(
+                                          member.id,
+                                        )}
+                                        onCheckedChange={(checked) => {
+                                          return checked
+                                            ? field.onChange([
+                                                ...(field.value ?? []),
+                                                member.id,
+                                              ])
+                                            : field.onChange(
+                                                (field.value ?? []).filter(
+                                                  (value) =>
+                                                    value !== member.id,
+                                                ),
+                                              );
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">
+                                      {member.name}
+                                      {member.specialties.length > 0 && (
+                                        <span className="text-muted-foreground text-xs">
+                                          {" "}
+                                          ({member.specialties.join(", ")})
+                                        </span>
                                       )}
-                                      onCheckedChange={(checked) => {
-                                        return checked
-                                          ? field.onChange([
-                                              ...(field.value ?? []),
-                                              photographer.id,
-                                            ])
-                                          : field.onChange(
-                                              (field.value ?? []).filter(
-                                                (value) =>
-                                                  value !== photographer.id,
-                                              ),
-                                            );
-                                      }}
-                                    />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">
-                                    {photographer.name}
-                                  </FormLabel>
-                                </FormItem>
-                              );
-                            }}
-                          />
-                        ))}
+                                    </FormLabel>
+                                  </FormItem>
+                                );
+                              }}
+                            />
+                          ))}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -674,42 +678,53 @@ export default function CreateShootPage() {
                             Select the editors for this shoot
                           </FormDescription>
                         </div>
-                        {editors.map((editor) => (
-                          <FormField
-                            key={editor.id}
-                            control={form.control}
-                            name="editorIds"
-                            render={({ field }) => {
-                              return (
-                                <FormItem
-                                  key={editor.id}
-                                  className="flex flex-row items-start space-y-0 space-x-3"
-                                >
-                                  <FormControl>
-                                    <Checkbox
-                                      checked={field.value?.includes(editor.id)}
-                                      onCheckedChange={(checked) => {
-                                        return checked
-                                          ? field.onChange([
-                                              ...(field.value ?? []),
-                                              editor.id,
-                                            ])
-                                          : field.onChange(
-                                              (field.value ?? []).filter(
-                                                (value) => value !== editor.id,
-                                              ),
-                                            );
-                                      }}
-                                    />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">
-                                    {editor.name}
-                                  </FormLabel>
-                                </FormItem>
-                              );
-                            }}
-                          />
-                        ))}
+                        {teamMembers
+                          .filter((member) => member.roles.includes("editor"))
+                          .map((member) => (
+                            <FormField
+                              key={member.id}
+                              control={form.control}
+                              name="editorIds"
+                              render={({ field }) => {
+                                return (
+                                  <FormItem
+                                    key={member.id}
+                                    className="flex flex-row items-start space-y-0 space-x-3"
+                                  >
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value?.includes(
+                                          member.id,
+                                        )}
+                                        onCheckedChange={(checked) => {
+                                          return checked
+                                            ? field.onChange([
+                                                ...(field.value ?? []),
+                                                member.id,
+                                              ])
+                                            : field.onChange(
+                                                (field.value ?? []).filter(
+                                                  (value) =>
+                                                    value !== member.id,
+                                                ),
+                                              );
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">
+                                      {member.name}
+                                      {member.specialties.length > 0 && (
+                                        <span className="text-muted-foreground text-xs">
+                                          {" "}
+                                          ({member.specialties.join(", ")})
+                                        </span>
+                                      )}
+                                    </FormLabel>
+                                  </FormItem>
+                                );
+                              }}
+                            />
+                          ))}
                         <FormMessage />
                       </FormItem>
                     )}

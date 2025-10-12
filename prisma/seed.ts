@@ -15,7 +15,8 @@ async function main() {
       email: "admin@photography-core.com",
       name: "Admin User",
       password: hashedPassword,
-      role: "admin",
+      roles: ["admin"],
+      isActive: true,
     },
   });
 
@@ -138,81 +139,99 @@ async function main() {
 
   console.log("✅ Created sample locations for clients");
 
-  // Create sample photographers
-  const photographers = [
+  // Create team members with different role combinations
+  const teamMemberPassword = await bcrypt.hash("team123", 12);
+
+  const teamMembers = [
+    // Pure Photographers
     {
       name: "Alice Johnson",
       email: "alice@photography.com",
       phone: "+1-555-0201",
-      specialties: ["Real Estate", "Portrait"],
+      roles: ["photographer"],
+      specialties: ["Real Estate", "Portrait Photography"],
+      rating: 4.5,
     },
     {
       name: "Bob Wilson",
       email: "bob@photography.com",
       phone: "+1-555-0202",
-      specialties: ["Drone", "Landscape"],
+      roles: ["photographer"],
+      specialties: ["Drone Photography", "Landscape"],
+      rating: 4.8,
     },
     {
       name: "Carol Davis",
       email: "carol@photography.com",
       phone: "+1-555-0203",
-      specialties: ["Event", "Wedding"],
+      roles: ["photographer"],
+      specialties: ["Event Photography", "Wedding"],
+      rating: 4.3,
     },
-    {
-      name: "David Brown",
-      email: "david@photography.com",
-      phone: "+1-555-0204",
-      specialties: ["Virtual Tours", "Commercial"],
-    },
-  ];
-
-  for (const photographer of photographers) {
-    await prisma.photographer.upsert({
-      where: { email: photographer.email },
-      update: {},
-      create: photographer,
-    });
-  }
-
-  console.log("✅ Created sample photographers");
-
-  // Create sample editors
-  const editors = [
+    // Pure Editors
     {
       name: "Eva Garcia",
       email: "eva@editing.com",
       phone: "+1-555-0301",
+      roles: ["editor"],
       specialties: ["Photo Editing", "Color Correction"],
+      rating: 4.6,
     },
     {
       name: "Frank Miller",
       email: "frank@editing.com",
       phone: "+1-555-0302",
+      roles: ["editor"],
       specialties: ["Video Editing", "Motion Graphics"],
+      rating: 4.7,
     },
     {
       name: "Grace Lee",
       email: "grace@editing.com",
       phone: "+1-555-0303",
+      roles: ["editor"],
       specialties: ["Retouching", "Compositing"],
+      rating: 4.4,
+    },
+    // Multi-role (Photographer + Editor)
+    {
+      name: "David Brown",
+      email: "david@photography.com",
+      phone: "+1-555-0204",
+      roles: ["photographer", "editor"],
+      specialties: ["Virtual Tours", "Photo Editing", "Commercial Photography"],
+      rating: 4.9,
     },
     {
       name: "Henry Chen",
       email: "henry@editing.com",
       phone: "+1-555-0304",
-      specialties: ["Audio Editing", "Podcast Production"],
+      roles: ["photographer", "editor"],
+      specialties: ["Podcast Production", "Audio Editing", "Videography"],
+      rating: 4.5,
     },
   ];
 
-  for (const editor of editors) {
-    await prisma.editor.upsert({
-      where: { email: editor.email },
+  for (const member of teamMembers) {
+    await prisma.user.upsert({
+      where: { email: member.email },
       update: {},
-      create: editor,
+      create: {
+        name: member.name,
+        email: member.email,
+        phone: member.phone,
+        password: teamMemberPassword,
+        roles: member.roles,
+        specialties: member.specialties,
+        rating: member.rating,
+        isActive: true,
+      },
     });
   }
 
-  console.log("✅ Created sample editors");
+  console.log(
+    "✅ Created team members (photographers, editors, and multi-role)",
+  );
 
   console.log("🎉 Seed completed successfully!");
 }

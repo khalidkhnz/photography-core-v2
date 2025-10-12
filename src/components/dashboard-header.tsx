@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { ToggleDarkLightMode } from "@/components/toggle-dark-light-mode";
 
 interface DashboardHeaderProps {
   user: {
@@ -21,7 +22,7 @@ interface DashboardHeaderProps {
     name?: string | null;
     email?: string | null;
     image?: string | null;
-    role: string;
+    roles: string[];
   };
 }
 
@@ -110,6 +111,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
       </div>
 
       <div className="flex items-center space-x-4">
+        <ToggleDarkLightMode />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -127,7 +129,11 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
                   {user.email}
                 </p>
                 <p className="text-muted-foreground text-xs leading-none">
-                  Role: {user.role}
+                  {user?.roles && user?.roles?.length > 0
+                    ? user?.roles
+                        ?.join(", ")
+                        ?.replace(/^./, (c) => c.toUpperCase())
+                    : "User"}
                 </p>
               </div>
             </DropdownMenuLabel>

@@ -1,4 +1,4 @@
-import { getPhotographers } from "@/server/actions/photographer-actions";
+import { getTeamMembers } from "@/server/actions/user-actions";
 import {
   Card,
   CardContent,
@@ -12,11 +12,13 @@ import { Trophy, Star, Camera, Award, Medal, Crown } from "lucide-react";
 import Link from "next/link";
 
 export default async function RankingPage() {
-  const photographers = await getPhotographers();
+  const teamMembers = await getTeamMembers(["photographer"]);
 
   // Sort photographers by rating (highest first), then by shoot count
-  const sortedPhotographers = photographers
-    .filter((p) => p.isActive)
+  const sortedPhotographers = teamMembers
+    .filter(
+      (member) => member.isActive && member.roles.includes("photographer"),
+    )
     .sort((a, b) => {
       const ratingA = a.rating ?? 0;
       const ratingB = b.rating ?? 0;
@@ -26,7 +28,7 @@ export default async function RankingPage() {
       }
 
       // If ratings are equal, sort by name
-      return a.name.localeCompare(b.name);
+      return (a.name ?? "").localeCompare(b.name ?? "");
     });
 
   const getRankIcon = (index: number) => {

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ToggleDarkLightMode } from "@/components/toggle-dark-light-mode";
 import Image from "next/image";
 import Assets from "@/assets/assets";
 import {
@@ -14,7 +13,6 @@ import {
   Settings,
   LogOut,
   UserCheck,
-  Edit,
   Type,
   Layers,
 } from "lucide-react";
@@ -46,14 +44,9 @@ const navigation = [
     icon: UserCheck,
   },
   {
-    name: "Photographers",
-    href: "/dashboard/photographers",
+    name: "Team",
+    href: "/dashboard/team",
     icon: Users,
-  },
-  {
-    name: "Editors",
-    href: "/dashboard/editors",
-    icon: Edit,
   },
   {
     name: "Shoot Types",
@@ -140,7 +133,6 @@ export function DashboardSidebar() {
       </nav>
 
       <div className="space-y-2 border-t p-4">
-        <ToggleDarkLightMode />
         <Button
           variant="ghost"
           className="w-full justify-start"

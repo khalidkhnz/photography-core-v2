@@ -88,14 +88,9 @@ export async function getClusterById(id: string) {
             client: true,
             shootType: true,
             location: true,
-            shootPhotographers: {
+            teamMembers: {
               include: {
-                photographer: true,
-              },
-            },
-            shootEditors: {
-              include: {
-                editor: true,
+                user: true,
               },
             },
           },

@@ -1,7 +1,6 @@
 import { getShoots } from "@/server/actions/shoot-actions";
 import { getClients } from "@/server/actions/client-actions";
-import { getPhotographers } from "@/server/actions/photographer-actions";
-import { getEditors } from "@/server/actions/editor-actions";
+import { getTeamMembers } from "@/server/actions/user-actions";
 import { getShootTypes } from "@/server/actions/shoot-type-actions";
 import {
   Card,
@@ -14,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Camera,
   Users,
-  Edit,
   Calendar,
   Building2,
   Tag,
@@ -26,14 +24,12 @@ import {
 import Link from "next/link";
 
 export default async function DashboardPage() {
-  const [shoots, clients, photographers, editors, shootTypes] =
-    await Promise.all([
-      getShoots(),
-      getClients(),
-      getPhotographers(),
-      getEditors(),
-      getShootTypes(),
-    ]);
+  const [shoots, clients, teamMembers, shootTypes] = await Promise.all([
+    getShoots(),
+    getClients(),
+    getTeamMembers(["photographer", "editor"]),
+    getShootTypes(),
+  ]);
 
   // Calculate statistics
   const totalShoots = shoots.length;
@@ -62,8 +58,12 @@ export default async function DashboardPage() {
     (shoot) => shoot.status === "cancelled",
   ).length;
 
-  const activePhotographers = photographers.filter((p) => p.isActive).length;
-  const activeEditors = editors.filter((e) => e.isActive).length;
+  const activePhotographers = teamMembers.filter(
+    (member) => member.isActive && member.roles.includes("photographer"),
+  ).length;
+  const activeEditors = teamMembers.filter(
+    (member) => member.isActive && member.roles.includes("editor"),
+  ).length;
   const totalLocations = clients.reduce(
     (sum, client) => sum + (client.locations?.length || 0),
     0,
@@ -298,18 +298,11 @@ export default async function DashboardPage() {
               <span className="text-sm">Add New Client</span>
             </Link>
             <Link
-              href="/dashboard/photographers/new"
+              href="/dashboard/team/new"
               className="hover:bg-muted flex items-center space-x-2 rounded-md p-2 transition-colors"
             >
               <Users className="h-4 w-4" />
-              <span className="text-sm">Add Photographer</span>
-            </Link>
-            <Link
-              href="/dashboard/editors/new"
-              className="hover:bg-muted flex items-center space-x-2 rounded-md p-2 transition-colors"
-            >
-              <Edit className="h-4 w-4" />
-              <span className="text-sm">Add Editor</span>
+              <span className="text-sm">Add Team Member</span>
             </Link>
             <Link
               href="/dashboard/shoot-types/new"

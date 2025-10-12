@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
         name,
         email,
         password: hashedPassword,
-        role: "admin", // Default role for now
+        roles: ["admin"], // Default role for now
       },
     });
 

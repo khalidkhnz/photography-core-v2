@@ -231,50 +231,62 @@ export default async function ViewShootPage({ params }: PageProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {shoot.shootPhotographers.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium">Photographers</p>
-                  <div className="mt-2 space-y-2">
-                    {shoot.shootPhotographers.map((sp) => (
-                      <div
-                        key={sp.id}
-                        className="flex items-center justify-between"
-                      >
-                        <span className="text-muted-foreground">
-                          {sp.photographer.name}
-                        </span>
-                        {sp.role && <Badge variant="outline">{sp.role}</Badge>}
-                      </div>
-                    ))}
+              {shoot.teamMembers &&
+                shoot.teamMembers.filter(
+                  (tm) => tm.assignmentType === "photographer",
+                ).length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium">Photographers</p>
+                    <div className="mt-2 space-y-2">
+                      {shoot.teamMembers
+                        .filter((tm) => tm.assignmentType === "photographer")
+                        .map((tm) => (
+                          <div
+                            key={tm.id}
+                            className="flex items-center justify-between"
+                          >
+                            <span className="text-muted-foreground">
+                              {tm.user.name}
+                            </span>
+                            {tm.role && (
+                              <Badge variant="outline">{tm.role}</Badge>
+                            )}
+                          </div>
+                        ))}
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {shoot.shootEditors.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium">Editors</p>
-                  <div className="mt-2 space-y-2">
-                    {shoot.shootEditors.map((se) => (
-                      <div
-                        key={se.id}
-                        className="flex items-center justify-between"
-                      >
-                        <span className="text-muted-foreground">
-                          {se.editor.name}
-                        </span>
-                        {se.role && <Badge variant="outline">{se.role}</Badge>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {shoot.shootPhotographers.length === 0 &&
-                shoot.shootEditors.length === 0 && (
-                  <p className="text-muted-foreground">
-                    No team members assigned
-                  </p>
                 )}
+
+              {shoot.teamMembers &&
+                shoot.teamMembers.filter((tm) => tm.assignmentType === "editor")
+                  .length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium">Editors</p>
+                    <div className="mt-2 space-y-2">
+                      {shoot.teamMembers
+                        .filter((tm) => tm.assignmentType === "editor")
+                        .map((tm) => (
+                          <div
+                            key={tm.id}
+                            className="flex items-center justify-between"
+                          >
+                            <span className="text-muted-foreground">
+                              {tm.user.name}
+                            </span>
+                            {tm.role && (
+                              <Badge variant="outline">{tm.role}</Badge>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+              {(!shoot.teamMembers || shoot.teamMembers.length === 0) && (
+                <p className="text-muted-foreground">
+                  No team members assigned
+                </p>
+              )}
             </CardContent>
           </Card>
 

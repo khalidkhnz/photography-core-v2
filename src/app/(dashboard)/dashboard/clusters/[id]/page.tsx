@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Edit, Layers, DollarSign } from "lucide-react";
+import { ArrowLeft, Edit, Layers } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { notFound } from "next/navigation";

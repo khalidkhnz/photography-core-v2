@@ -57,8 +57,11 @@ interface Shoot {
   location: {
     name: string;
   } | null;
-  shootPhotographers?: Array<{ photographerId: string }>;
-  shootEditors?: Array<{ editorId: string }>;
+  teamMembers?: Array<{
+    userId: string;
+    assignmentType: string;
+    user: { name: string | null };
+  }>;
 }
 
 interface ShootsTableProps {
@@ -148,17 +151,19 @@ export function ShootsTable({ shoots, clients }: ShootsTableProps) {
 
   // Get team assigned based on status
   const getTeamAssigned = (shoot: Shoot) => {
+    const photographers =
+      shoot.teamMembers?.filter((tm) => tm.assignmentType === "photographer") ??
+      [];
+    const editors =
+      shoot.teamMembers?.filter((tm) => tm.assignmentType === "editor") ?? [];
+
     switch (shoot.status) {
       case "planned":
       case "in_progress":
-        return (shoot.shootPhotographers?.length ?? 0 > 0)
-          ? "Photographers"
-          : "Not Assigned";
+        return photographers.length > 0 ? "Photographers" : "Not Assigned";
       case "editing":
       case "delivered":
-        return (shoot.shootEditors?.length ?? 0 > 0)
-          ? "Editors"
-          : "Not Assigned";
+        return editors.length > 0 ? "Editors" : "Not Assigned";
       case "completed":
         return "Completed";
       default:

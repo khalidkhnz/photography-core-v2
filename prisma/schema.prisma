@@ -65,40 +65,6 @@ model Location {
   @@index([clientId])
 }
 
-model Photographer {
-    id          String   @id @default(cuid())
-    name        String
-    email       String?  @unique
-    phone       String?
-    specialties String[] // Array of expertise areas
-    rating      Float?   @default(0)
-    isActive    Boolean  @default(true)
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
-
-    shootPhotographers ShootPhotographer[]
-
-    @@index([name])
-    @@index([isActive])
-}
-
-model Editor {
-    id          String   @id @default(cuid())
-    name        String
-    email       String?  @unique
-    phone       String?
-    specialties String[] // Array of expertise areas
-    rating      Float?   @default(0)
-    isActive    Boolean  @default(true)
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
-
-    shootEditors ShootEditor[]
-
-    @@index([name])
-    @@index([isActive])
-}
-
 // Cluster for grouping multiple shoots (e.g., quarterly construction updates)
 model Cluster {
     id              String   @id @default(cuid())
@@ -146,8 +112,7 @@ model Shoot {
     location              Location? @relation(fields: [locationId], references: [id])
     cluster               Cluster? @relation(fields: [clusterId], references: [id], onDelete: SetNull)
     
-    shootPhotographers    ShootPhotographer[]
-    shootEditors          ShootEditor[]
+    teamMembers           ShootTeamMember[] // Unified team assignments (photographers & editors)
 
     @@index([shootId])
     @@index([clientId])
@@ -159,36 +124,22 @@ model Shoot {
     @@index([workflowType])
 }
 
-// Junction table for many-to-many relationship between shoots and photographers
-model ShootPhotographer {
-    id             String       @id @default(cuid())
+// Unified junction table for shoot team assignments (photographers & editors)
+model ShootTeamMember {
+    id             String   @id @default(cuid())
     shootId        String
-    photographerId String
-    role           String?      // Lead, Assistant, etc.
-    assignedAt     DateTime     @default(now())
+    userId         String   // References User (can have photographer or editor role)
+    assignmentType String   // "photographer" or "editor" - what they're doing in this shoot
+    role           String?  // "Lead", "Assistant", etc. - hierarchical role
+    assignedAt     DateTime @default(now())
 
-    shoot          Shoot        @relation(fields: [shootId], references: [id], onDelete: Cascade)
-    photographer   Photographer @relation(fields: [photographerId], references: [id], onDelete: Cascade)
+    shoot          Shoot @relation(fields: [shootId], references: [id], onDelete: Cascade)
+    user           User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    @@unique([shootId, photographerId])
+    @@unique([shootId, userId, assignmentType]) // Same user can be both photographer AND editor in one shoot
     @@index([shootId])
-    @@index([photographerId])
-}
-
-// Junction table for many-to-many relationship between shoots and editors
-model ShootEditor {
-    id        String   @id @default(cuid())
-    shootId   String
-    editorId  String
-    role      String?  // Lead, Assistant, etc.
-    assignedAt DateTime @default(now())
-
-    shoot     Shoot    @relation(fields: [shootId], references: [id], onDelete: Cascade)
-    editor    Editor   @relation(fields: [editorId], references: [id], onDelete: Cascade)
-
-    @@unique([shootId, editorId])
-    @@index([shootId])
-    @@index([editorId])
+    @@index([userId])
+    @@index([assignmentType])
 }
 
 // Necessary for Next auth
@@ -226,9 +177,26 @@ model User {
     emailVerified DateTime?
     image         String?
     password      String?   // For email/password authentication
-    role          String    @default("admin") // For future RBAC implementation
-    accounts      Account[]
-    sessions      Session[]
+    
+    // Multi-role support: user can be admin, photographer, editor, or any combination
+    roles         String[]  @default(["admin"]) // ["admin"], ["photographer"], ["editor"], ["photographer", "editor"], etc.
+    
+    // Team member fields (for photographer/editor roles)
+    phone         String?
+    specialties   String[]  @default([]) // Photography, Videography, Photo Editing, Video Editing, etc.
+    rating        Float?    @default(0) // Performance rating (0-5)
+    isActive      Boolean   @default(true) // Active team member status
+    
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+    
+    // Relations
+    accounts         Account[]
+    sessions         Session[]
+    shootAssignments ShootTeamMember[]
+    
+    @@index([email])
+    @@index([isActive])
 }
 
 model Coupon {
