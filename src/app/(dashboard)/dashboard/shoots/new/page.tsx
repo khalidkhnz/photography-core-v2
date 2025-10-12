@@ -10,6 +10,7 @@ import { getShootTypes } from "@/server/actions/shoot-type-actions";
 import { getLocationsByClient } from "@/server/actions/location-actions";
 import { getPhotographers } from "@/server/actions/photographer-actions";
 import { getEditors } from "@/server/actions/editor-actions";
+import { getClusters } from "@/server/actions/cluster-actions";
 import {
   createShootSchema,
   type CreateShootFormData,
@@ -76,6 +77,12 @@ interface Editor {
   email?: string | null;
 }
 
+interface Cluster {
+  id: string;
+  name: string;
+  description?: string | null;
+}
+
 export default function CreateShootPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -84,6 +91,7 @@ export default function CreateShootPage() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [photographers, setPhotographers] = useState<Photographer[]>([]);
   const [editors, setEditors] = useState<Editor[]>([]);
+  const [clusters, setClusters] = useState<Cluster[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const router = useRouter();
 
@@ -93,6 +101,7 @@ export default function CreateShootPage() {
       clientId: "",
       shootTypeId: "",
       locationId: "",
+      clusterId: "",
       projectName: "",
       remarks: "",
       editId: "",
@@ -101,6 +110,7 @@ export default function CreateShootPage() {
       shootEndDate: "",
       photographerNotes: "",
       editorNotes: "",
+      workflowType: "shift",
       photographyCost: "",
       travelCost: "",
       editingCost: "",
@@ -111,23 +121,32 @@ export default function CreateShootPage() {
 
   // Watch for client changes to fetch locations
   const selectedClientId = form.watch("clientId");
+  const selectedWorkflowType = form.watch("workflowType");
 
   // Fetch data on component mount
   useEffect(() => {
     async function fetchData() {
       try {
-        const [clientsData, shootTypesData, photographersData, editorsData] =
-          await Promise.all([
-            getClients(),
-            getShootTypes(),
-            getPhotographers(),
-            getEditors(),
-          ]);
+        const [
+          clientsData,
+          shootTypesData,
+          photographersData,
+          editorsData,
+          clustersData,
+        ] = await Promise.all([
+          getClients(),
+          getShootTypes(),
+          getPhotographers(),
+          getEditors(),
+          getClusters(),
+        ]);
 
         setClients(clientsData);
         setShootTypes(shootTypesData);
         setPhotographers(photographersData);
         setEditors(editorsData);
+        setClusters(clustersData);
+        console.log("Clusters loaded:", clustersData.length, clustersData);
       } catch (error) {
         console.error("Error fetching data:", error);
         setError("Failed to load form data");
@@ -171,9 +190,11 @@ export default function CreateShootPage() {
       formData.append("clientId", data.clientId);
       formData.append("shootTypeId", data.shootTypeId);
       if (data.locationId) formData.append("locationId", data.locationId);
+      if (data.clusterId) formData.append("clusterId", data.clusterId);
       if (data.projectName) formData.append("projectName", data.projectName);
       if (data.remarks) formData.append("remarks", data.remarks);
       if (data.editId) formData.append("editId", data.editId);
+      if (data.workflowType) formData.append("workflowType", data.workflowType);
       if (data.overallDeliverables)
         formData.append("overallDeliverables", data.overallDeliverables);
       if (data.shootStartDate)
@@ -310,6 +331,83 @@ export default function CreateShootPage() {
                       </FormItem>
                     )}
                   />
+
+                  <FormField
+                    control={form.control}
+                    name="workflowType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Workflow Type *</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select workflow" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="shift">
+                              Shift Basis (Per-day/Per-shift)
+                            </SelectItem>
+                            <SelectItem value="project">
+                              Project Basis (Lump-sum)
+                            </SelectItem>
+                            <SelectItem value="cluster">
+                              Cluster Basis (Grouped shoots)
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Choose how this shoot will be tracked and billed
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {selectedWorkflowType === "cluster" && (
+                    <FormField
+                      control={form.control}
+                      name="clusterId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cluster</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select cluster (optional)" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {clusters.length === 0 ? (
+                                <div className="text-muted-foreground px-2 py-1 text-sm">
+                                  No clusters available. Create one first.
+                                </div>
+                              ) : (
+                                clusters.map((cluster) => (
+                                  <SelectItem
+                                    key={cluster.id}
+                                    value={cluster.id}
+                                  >
+                                    {cluster.name}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Group this shoot with other shoots for combined P&L
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
 
                   <FormField
                     control={form.control}

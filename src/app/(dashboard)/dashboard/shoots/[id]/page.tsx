@@ -24,6 +24,14 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { notFound } from "next/navigation";
 
+interface ExtendedShootData {
+  workflowType?: string | null;
+  cluster?: {
+    id: string;
+    name: string;
+  } | null;
+}
+
 interface PageProps {
   params: Promise<{ id: string }>;
 }
@@ -35,6 +43,8 @@ export default async function ViewShootPage({ params }: PageProps) {
   if (!shoot) {
     notFound();
   }
+
+  const extendedShoot = shoot as unknown as ExtendedShootData;
 
   return (
     <div className="space-y-6">
@@ -137,6 +147,29 @@ export default async function ViewShootPage({ params }: PageProps) {
                   <div>
                     <p className="text-sm font-medium">Edit ID</p>
                     <p className="text-muted-foreground">{shoot.editId}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-medium">Workflow Type</p>
+                  <Badge variant="secondary">
+                    {extendedShoot.workflowType === "shift"
+                      ? "Shift Basis"
+                      : extendedShoot.workflowType === "project"
+                        ? "Project Basis"
+                        : extendedShoot.workflowType === "cluster"
+                          ? "Cluster Basis"
+                          : "Shift Basis"}
+                  </Badge>
+                </div>
+                {extendedShoot.cluster && (
+                  <div>
+                    <p className="text-sm font-medium">Cluster</p>
+                    <Link
+                      href={`/dashboard/clusters/${extendedShoot.cluster.id}`}
+                      className="text-primary hover:underline"
+                    >
+                      {extendedShoot.cluster.name}
+                    </Link>
                   </div>
                 )}
               </div>

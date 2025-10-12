@@ -4,6 +4,7 @@ export const createShootSchema = z.object({
   clientId: z.string().min(1, "Client is required"),
   shootTypeId: z.string().min(1, "Shoot type is required"),
   locationId: z.string().optional(),
+  clusterId: z.string().optional(),
   projectName: z.string().optional(),
   remarks: z.string().optional(),
   editId: z.string().optional(),
@@ -12,6 +13,7 @@ export const createShootSchema = z.object({
   shootEndDate: z.string().optional(),
   photographerNotes: z.string().optional(),
   editorNotes: z.string().optional(),
+  workflowType: z.enum(["shift", "project", "cluster"]).optional(),
   // Cost tracking fields
   photographyCost: z.string().optional(), // Will be converted to Float on server
   travelCost: z.string().optional(), // Will be converted to Float on server
@@ -25,6 +27,7 @@ export const updateShootSchema = z.object({
   clientId: z.string().min(1, "Client is required"),
   shootTypeId: z.string().min(1, "Shoot type is required"),
   locationId: z.string().optional(),
+  clusterId: z.string().optional(),
   projectName: z.string().optional(),
   remarks: z.string().optional(),
   editId: z.string().optional(),
@@ -33,6 +36,7 @@ export const updateShootSchema = z.object({
   shootEndDate: z.string().optional(),
   photographerNotes: z.string().optional(),
   editorNotes: z.string().optional(),
+  workflowType: z.enum(["shift", "project", "cluster"]).optional(),
   // Cost tracking fields
   photographyCost: z.string().optional(),
   travelCost: z.string().optional(),
@@ -41,5 +45,21 @@ export const updateShootSchema = z.object({
   editorIds: z.array(z.string()).optional(),
 });
 
+export const createClusterSchema = z.object({
+  name: z.string().min(1, "Cluster name is required"),
+  description: z.string().optional(),
+  clientId: z.string().optional(),
+  totalCost: z.string().optional(),
+});
+
+export const updateClusterSchema = z.object({
+  name: z.string().min(1, "Cluster name is required"),
+  description: z.string().optional(),
+  clientId: z.string().optional(),
+  totalCost: z.string().optional(),
+});
+
 export type CreateShootFormData = z.infer<typeof createShootSchema>;
 export type UpdateShootFormData = z.infer<typeof updateShootSchema>;
+export type CreateClusterFormData = z.infer<typeof createClusterSchema>;
+export type UpdateClusterFormData = z.infer<typeof updateClusterSchema>;

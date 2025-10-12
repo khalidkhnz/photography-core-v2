@@ -16,6 +16,7 @@ import {
   UserCheck,
   Edit,
   Type,
+  Layers,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -53,6 +54,11 @@ const navigation = [
     name: "Shoot Types",
     href: "/dashboard/shoot-types",
     icon: Type,
+  },
+  {
+    name: "Clusters",
+    href: "/dashboard/clusters",
+    icon: Layers,
   },
   // {
   //   name: "Coupons",

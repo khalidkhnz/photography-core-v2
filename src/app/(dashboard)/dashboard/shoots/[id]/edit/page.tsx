@@ -11,6 +11,7 @@ import { getShootTypes } from "@/server/actions/shoot-type-actions";
 import { getLocationsByClient } from "@/server/actions/location-actions";
 import { getPhotographers } from "@/server/actions/photographer-actions";
 import { getEditors } from "@/server/actions/editor-actions";
+import { getClusters } from "@/server/actions/cluster-actions";
 import {
   updateShootSchema,
   type UpdateShootFormData,
@@ -77,12 +78,19 @@ interface Editor {
   email?: string | null;
 }
 
+interface Cluster {
+  id: string;
+  name: string;
+  description?: string | null;
+}
+
 // Extended Shoot type with new fields
 interface ExtendedShoot {
   shootId: string;
   clientId: string;
   shootTypeId: string;
   locationId: string | null;
+  clusterId?: string | null;
   projectName?: string | null;
   remarks?: string | null;
   editId?: string | null;
@@ -91,6 +99,7 @@ interface ExtendedShoot {
   shootEndDate?: Date | null;
   photographerNotes?: string | null;
   editorNotes?: string | null;
+  workflowType?: string | null;
   photographyCost?: number | null;
   travelCost?: number | null;
   editingCost?: number | null;
@@ -110,6 +119,7 @@ export default function EditShootPage({ params }: PageProps) {
   const [locations, setLocations] = useState<Location[]>([]);
   const [photographers, setPhotographers] = useState<Photographer[]>([]);
   const [editors, setEditors] = useState<Editor[]>([]);
+  const [clusters, setClusters] = useState<Cluster[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [shootId, setShootId] = useState<string>("");
   const router = useRouter();
@@ -121,6 +131,7 @@ export default function EditShootPage({ params }: PageProps) {
       clientId: "",
       shootTypeId: "",
       locationId: "",
+      clusterId: "",
       projectName: "",
       remarks: "",
       editId: "",
@@ -129,6 +140,7 @@ export default function EditShootPage({ params }: PageProps) {
       shootEndDate: "",
       photographerNotes: "",
       editorNotes: "",
+      workflowType: "shift",
       photographyCost: "",
       travelCost: "",
       editingCost: "",
@@ -139,6 +151,7 @@ export default function EditShootPage({ params }: PageProps) {
 
   // Watch for client changes to fetch locations
   const selectedClientId = form.watch("clientId");
+  const selectedWorkflowType = form.watch("workflowType");
 
   // Fetch data on component mount
   useEffect(() => {
@@ -154,12 +167,14 @@ export default function EditShootPage({ params }: PageProps) {
           shootTypesData,
           photographersData,
           editorsData,
+          clustersData,
         ] = await Promise.all([
           getShootById(id),
           getClients(),
           getShootTypes(),
           getPhotographers(),
           getEditors(),
+          getClusters(),
         ]);
 
         if (!shootData) {
@@ -171,6 +186,7 @@ export default function EditShootPage({ params }: PageProps) {
         setShootTypes(shootTypesData);
         setPhotographers(photographersData);
         setEditors(editorsData);
+        setClusters(clustersData);
 
         // Cast shootData to ExtendedShoot to access new fields
         const extendedShootData = shootData as unknown as ExtendedShoot;
@@ -180,9 +196,15 @@ export default function EditShootPage({ params }: PageProps) {
         form.setValue("clientId", extendedShootData.clientId);
         form.setValue("shootTypeId", extendedShootData.shootTypeId);
         form.setValue("locationId", extendedShootData.locationId ?? "");
+        form.setValue("clusterId", extendedShootData.clusterId ?? "");
         form.setValue("projectName", extendedShootData.projectName ?? "");
         form.setValue("remarks", extendedShootData.remarks ?? "");
         form.setValue("editId", extendedShootData.editId ?? "");
+        form.setValue(
+          "workflowType",
+          (extendedShootData.workflowType as "shift" | "project" | "cluster") ??
+            "shift",
+        );
         form.setValue(
           "overallDeliverables",
           extendedShootData.overallDeliverables ?? "",
@@ -284,9 +306,11 @@ export default function EditShootPage({ params }: PageProps) {
       formData.append("clientId", data.clientId);
       formData.append("shootTypeId", data.shootTypeId);
       if (data.locationId) formData.append("locationId", data.locationId);
+      if (data.clusterId) formData.append("clusterId", data.clusterId);
       if (data.projectName) formData.append("projectName", data.projectName);
       if (data.remarks) formData.append("remarks", data.remarks);
       if (data.editId) formData.append("editId", data.editId);
+      if (data.workflowType) formData.append("workflowType", data.workflowType);
       if (data.overallDeliverables)
         formData.append("overallDeliverables", data.overallDeliverables);
       if (data.shootStartDate)
@@ -439,6 +463,80 @@ export default function EditShootPage({ params }: PageProps) {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="workflowType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Workflow Type *</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select workflow" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="shift">
+                            Shift Basis (Per-day/Per-shift)
+                          </SelectItem>
+                          <SelectItem value="project">
+                            Project Basis (Lump-sum)
+                          </SelectItem>
+                          <SelectItem value="cluster">
+                            Cluster Basis (Grouped shoots)
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Choose how this shoot will be tracked and billed
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {selectedWorkflowType === "cluster" && (
+                  <FormField
+                    control={form.control}
+                    name="clusterId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cluster</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select cluster (optional)" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {clusters.length === 0 ? (
+                              <div className="text-muted-foreground px-2 py-1 text-sm">
+                                No clusters available. Create one first.
+                              </div>
+                            ) : (
+                              clusters.map((cluster) => (
+                                <SelectItem key={cluster.id} value={cluster.id}>
+                                  {cluster.name}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Group this shoot with other shoots for combined P&L
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}
