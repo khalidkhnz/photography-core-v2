@@ -1,4 +1,5 @@
 import { getShoots } from "@/server/actions/shoot-actions";
+import { getClients } from "@/server/actions/client-actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,7 +13,7 @@ import Link from "next/link";
 import { ShootsTable } from "./_components/shoots-table";
 
 export default async function ShootsPage() {
-  const shoots = await getShoots();
+  const [shoots, clients] = await Promise.all([getShoots(), getClients()]);
 
   return (
     <div className="space-y-6">
@@ -56,7 +57,7 @@ export default async function ShootsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ShootsTable shoots={shoots} />
+            <ShootsTable shoots={shoots} clients={clients} />
           </CardContent>
         </Card>
       )}

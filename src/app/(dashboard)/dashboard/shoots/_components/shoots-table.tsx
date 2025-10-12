@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { deleteShoot, updateShootStatus } from "@/server/actions/shoot-actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -36,16 +37,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, MapPin } from "lucide-react";
+import { MoreHorizontal, MapPin, Search, Filter, X } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 
 interface Shoot {
   id: string;
   shootId: string;
-  projectName: string | null;
-  remarks: string | null;
-  shootStartDate: Date | null;
+  projectName?: string | null;
+  remarks?: string | null;
+  shootStartDate?: Date | null;
   status: string;
   client: {
     name: string;
@@ -56,19 +57,27 @@ interface Shoot {
   location: {
     name: string;
   } | null;
+  shootPhotographers?: Array<{ photographerId: string }>;
+  shootEditors?: Array<{ editorId: string }>;
 }
 
 interface ShootsTableProps {
   shoots: Shoot[];
+  clients: Array<{ id: string; name: string }>;
 }
 
-export function ShootsTable({ shoots }: ShootsTableProps) {
+export function ShootsTable({ shoots, clients }: ShootsTableProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [shootToDelete, setShootToDelete] = useState<{
     id: string;
     shootId: string;
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterClient, setFilterClient] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterDateFrom, setFilterDateFrom] = useState<string>("");
+  const [filterDateTo, setFilterDateTo] = useState<string>("");
   const router = useRouter();
 
   const handleDeleteClick = (shoot: { id: string; shootId: string }) => {
@@ -93,8 +102,170 @@ export function ShootsTable({ shoots }: ShootsTableProps) {
     }
   };
 
+  // Filter and search shoots
+  const filteredShoots = useMemo(() => {
+    return shoots.filter((shoot) => {
+      // Search filter
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch =
+        (!searchQuery || shoot.shootId.toLowerCase().includes(searchLower)) ??
+        shoot.projectName?.toLowerCase().includes(searchLower) ??
+        shoot.remarks?.toLowerCase().includes(searchLower);
+
+      // Client filter
+      const matchesClient =
+        filterClient === "all" || shoot.client.name === filterClient;
+
+      // Status filter
+      const matchesStatus =
+        filterStatus === "all" || shoot.status === filterStatus;
+
+      // Date filter
+      const shootDate = shoot.shootStartDate
+        ? new Date(shoot.shootStartDate)
+        : null;
+      const matchesDateFrom =
+        !filterDateFrom || (shootDate && shootDate >= new Date(filterDateFrom));
+      const matchesDateTo =
+        !filterDateTo || (shootDate && shootDate <= new Date(filterDateTo));
+
+      return (
+        matchesSearch &&
+        matchesClient &&
+        matchesStatus &&
+        matchesDateFrom &&
+        matchesDateTo
+      );
+    });
+  }, [
+    shoots,
+    searchQuery,
+    filterClient,
+    filterStatus,
+    filterDateFrom,
+    filterDateTo,
+  ]);
+
+  // Get team assigned based on status
+  const getTeamAssigned = (shoot: Shoot) => {
+    switch (shoot.status) {
+      case "planned":
+      case "in_progress":
+        return (shoot.shootPhotographers?.length ?? 0 > 0)
+          ? "Photographers"
+          : "Not Assigned";
+      case "editing":
+      case "delivered":
+        return (shoot.shootEditors?.length ?? 0 > 0)
+          ? "Editors"
+          : "Not Assigned";
+      case "completed":
+        return "Completed";
+      default:
+        return "—";
+    }
+  };
+
   return (
     <>
+      {/* Search and Filters */}
+      <div className="mb-4 space-y-4">
+        {/* Search Bar */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+            <Input
+              placeholder="Search by Shoot ID, Project Name, or Remarks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSearchQuery("")}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Filter className="text-muted-foreground h-4 w-4" />
+          <Select value={filterClient} onValueChange={setFilterClient}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Clients" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Clients</SelectItem>
+              {clients.map((client) => (
+                <SelectItem key={client.id} value={client.name}>
+                  {client.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="planned">Planned</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="editing">Editing</SelectItem>
+              <SelectItem value="delivered">Delivered</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="blocked">Blocked</SelectItem>
+              <SelectItem value="postponed">Postponed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Input
+            type="date"
+            value={filterDateFrom}
+            onChange={(e) => setFilterDateFrom(e.target.value)}
+            placeholder="From Date"
+            className="w-[150px]"
+          />
+
+          <Input
+            type="date"
+            value={filterDateTo}
+            onChange={(e) => setFilterDateTo(e.target.value)}
+            placeholder="To Date"
+            className="w-[150px]"
+          />
+
+          {(filterClient !== "all" ||
+            filterStatus !== "all" ||
+            filterDateFrom ||
+            filterDateTo) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setFilterClient("all");
+                setFilterStatus("all");
+                setFilterDateFrom("");
+                setFilterDateTo("");
+              }}
+            >
+              Clear Filters
+            </Button>
+          )}
+        </div>
+
+        <div className="text-muted-foreground text-sm">
+          Showing {filteredShoots.length} of {shoots.length} shoots
+        </div>
+      </div>
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -105,12 +276,13 @@ export function ShootsTable({ shoots }: ShootsTableProps) {
             <TableHead>Location</TableHead>
             <TableHead>Start Date</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Team Assigned</TableHead>
             <TableHead>Remarks</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {shoots.map((shoot) => (
+          {filteredShoots.map((shoot) => (
             <TableRow key={shoot.id}>
               <TableCell className="font-medium">{shoot.shootId}</TableCell>
               <TableCell>
@@ -153,10 +325,17 @@ export function ShootsTable({ shoots }: ShootsTableProps) {
                   <SelectContent>
                     <SelectItem value="planned">Planned</SelectItem>
                     <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="editing">Editing</SelectItem>
+                    <SelectItem value="delivered">Delivered</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="blocked">Blocked</SelectItem>
+                    <SelectItem value="postponed">Postponed</SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline">{getTeamAssigned(shoot)}</Badge>
               </TableCell>
               <TableCell>
                 {shoot.remarks ? (

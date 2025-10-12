@@ -95,7 +95,11 @@ export default async function ViewShootPage({ params }: PageProps) {
                     <SelectContent>
                       <SelectItem value="planned">Planned</SelectItem>
                       <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="editing">Editing</SelectItem>
+                      <SelectItem value="delivered">Delivered</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="blocked">Blocked</SelectItem>
+                      <SelectItem value="postponed">Postponed</SelectItem>
                       <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>

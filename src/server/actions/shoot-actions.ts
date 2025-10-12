@@ -330,7 +330,16 @@ export async function updateShoot(id: string, formData: FormData) {
 
 export async function updateShootStatus(id: string, status: string) {
   try {
-    const validStatuses = ["planned", "in_progress", "completed", "cancelled"];
+    const validStatuses = [
+      "planned",
+      "in_progress",
+      "editing",
+      "delivered",
+      "completed",
+      "blocked",
+      "postponed",
+      "cancelled",
+    ];
 
     if (!validStatuses.includes(status)) {
       throw new Error("Invalid status");

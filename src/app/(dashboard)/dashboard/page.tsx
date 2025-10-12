@@ -43,8 +43,20 @@ export default async function DashboardPage() {
   const inProgressShoots = shoots.filter(
     (shoot) => shoot.status === "in_progress",
   ).length;
+  const editingShoots = shoots.filter(
+    (shoot) => shoot.status === "editing",
+  ).length;
+  const deliveredShoots = shoots.filter(
+    (shoot) => shoot.status === "delivered",
+  ).length;
   const completedShoots = shoots.filter(
     (shoot) => shoot.status === "completed",
+  ).length;
+  const blockedShoots = shoots.filter(
+    (shoot) => shoot.status === "blocked",
+  ).length;
+  const postponedShoots = shoots.filter(
+    (shoot) => shoot.status === "postponed",
   ).length;
   const cancelledShoots = shoots.filter(
     (shoot) => shoot.status === "cancelled",
@@ -145,25 +157,27 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+            <CardTitle className="text-sm font-medium">Active</CardTitle>
             <TrendingUp className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">
-              {inProgressShoots}
+              {inProgressShoots + editingShoots}
             </div>
-            <p className="text-muted-foreground text-xs">Currently active</p>
+            <p className="text-muted-foreground text-xs">
+              In progress & editing
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
+            <CardTitle className="text-sm font-medium">Delivered</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {completedShoots}
+              {deliveredShoots + completedShoots}
             </div>
             <p className="text-muted-foreground text-xs">
               Successfully finished
@@ -173,14 +187,16 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cancelled</CardTitle>
+            <CardTitle className="text-sm font-medium">Issues</CardTitle>
             <XCircle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {cancelledShoots}
+              {blockedShoots + postponedShoots + cancelledShoots}
             </div>
-            <p className="text-muted-foreground text-xs">Cancelled shoots</p>
+            <p className="text-muted-foreground text-xs">
+              Blocked, postponed, cancelled
+            </p>
           </CardContent>
         </Card>
       </div>

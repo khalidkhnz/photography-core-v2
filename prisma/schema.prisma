@@ -117,7 +117,7 @@ model Shoot {
     photographyCost       Float?   // Shoot cost
     travelCost            Float?   // Travel cost (separate from photography)
     editingCost           Float?   // Editing cost
-    status                String   @default("planned") // planned, in_progress, completed, cancelled
+    status                String   @default("planned") // planned, in_progress, editing, delivered, completed, blocked, postponed, cancelled
     createdAt             DateTime @default(now())
     updatedAt             DateTime @updatedAt
 
