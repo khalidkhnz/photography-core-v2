@@ -21,6 +21,7 @@ export const createShootSchema = z.object({
   photographerIds: z.array(z.string()).optional(),
   editorIds: z.array(z.string()).optional(),
   executorId: z.string().optional(), // The person who completed the shoot
+  poc: z.string().optional(), // Point of Contact for the shoot
 });
 
 export const updateShootSchema = z.object({
@@ -45,6 +46,7 @@ export const updateShootSchema = z.object({
   photographerIds: z.array(z.string()).optional(),
   editorIds: z.array(z.string()).optional(),
   executorId: z.string().optional(), // The person who completed the shoot
+  poc: z.string().optional(), // Point of Contact for the shoot
 });
 
 export const createClusterSchema = z.object({

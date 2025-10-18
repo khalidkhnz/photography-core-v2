@@ -105,6 +105,7 @@ model Shoot {
     travelCost            Float?   // Travel cost (separate from photography)
     editingCost           Float?   // Editing cost
     executorId            String?  // The person who completed the shoot (from selected team members)
+    poc                   String?  // Point of Contact for the shoot
     status                String   @default("planned") // planned, in_progress, editing, delivered, completed, blocked, postponed, cancelled
     createdAt             DateTime @default(now())
     updatedAt             DateTime @updatedAt

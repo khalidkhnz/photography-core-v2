@@ -113,6 +113,7 @@ export default function CreateShootPage() {
       photographerIds: [],
       editorIds: [],
       executorId: "",
+      poc: "",
     },
   });
 
@@ -220,6 +221,11 @@ export default function CreateShootPage() {
       // Add executor ID
       if (data.executorId) {
         formData.append("executorId", data.executorId);
+      }
+
+      // Add POC
+      if (data.poc) {
+        formData.append("poc", data.poc);
       }
 
       await createShoot(formData);
@@ -487,6 +493,26 @@ export default function CreateShootPage() {
                             {...field}
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="poc"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Point of Contact (POC)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter point of contact name"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          The main contact person for this shoot
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

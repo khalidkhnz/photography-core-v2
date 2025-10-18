@@ -25,6 +25,7 @@ const createShootSchema = z.object({
   photographerIds: z.array(z.string()).optional(), // Will map to assignmentType: "photographer"
   editorIds: z.array(z.string()).optional(), // Will map to assignmentType: "editor"
   executorId: z.string().optional(), // The person who completed the shoot
+  poc: z.string().optional(), // Point of Contact for the shoot
 });
 
 const updateShootSchema = z.object({
@@ -48,6 +49,7 @@ const updateShootSchema = z.object({
   photographerIds: z.array(z.string()).optional(),
   editorIds: z.array(z.string()).optional(),
   executorId: z.string().optional(), // The person who completed the shoot
+  poc: z.string().optional(), // Point of Contact for the shoot
 });
 
 // Function to generate unique Shoot ID
@@ -83,6 +85,7 @@ export async function createShoot(formData: FormData) {
       photographerIds: formData.getAll("photographerIds") as string[],
       editorIds: formData.getAll("editorIds") as string[],
       executorId: (formData.get("executorId") as string) || undefined,
+      poc: (formData.get("poc") as string) || undefined,
     };
 
     // Get shoot type to generate ID
@@ -150,6 +153,7 @@ export async function createShoot(formData: FormData) {
         travelCost: travelCostFloat,
         editingCost: editingCostFloat,
         executorId: validatedData.executorId, // Executor who will complete the shoot
+        poc: validatedData.poc, // Point of Contact for the shoot
         status: "planned",
       },
     });
@@ -252,6 +256,7 @@ export async function updateShoot(id: string, formData: FormData) {
         rawPhotographerIds.length > 0 ? rawPhotographerIds : undefined,
       editorIds: rawEditorIds.length > 0 ? rawEditorIds : undefined,
       executorId: (formData.get("executorId") as string) || undefined,
+      poc: (formData.get("poc") as string) || undefined,
     };
 
     const validatedData = updateShootSchema.parse(rawData);
@@ -309,6 +314,7 @@ export async function updateShoot(id: string, formData: FormData) {
         travelCost: travelCostFloat,
         editingCost: editingCostFloat,
         executorId: validatedData.executorId,
+        poc: validatedData.poc,
       },
     });
 

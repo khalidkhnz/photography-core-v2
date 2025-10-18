@@ -130,6 +130,12 @@ export default async function ViewShootPage({ params }: PageProps) {
                     <p className="text-muted-foreground">{shoot.executor.name}</p>
                   </div>
                 )}
+                {shoot.poc && (
+                  <div>
+                    <p className="text-sm font-medium">Point of Contact</p>
+                    <p className="text-muted-foreground">{shoot.poc}</p>
+                  </div>
+                )}
                 {shoot.location && (
                   <div className="md:col-span-2">
                     <p className="text-sm font-medium">Location</p>

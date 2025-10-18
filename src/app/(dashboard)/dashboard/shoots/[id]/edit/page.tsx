@@ -101,6 +101,7 @@ interface ExtendedShoot {
   travelCost?: number | null;
   editingCost?: number | null;
   executorId?: string | null;
+  poc?: string | null;
   teamMembers: Array<{ userId: string; assignmentType: string }>;
 }
 
@@ -143,6 +144,7 @@ export default function EditShootPage({ params }: PageProps) {
       photographerIds: [],
       editorIds: [],
       executorId: "",
+      poc: "",
     },
   });
 
@@ -249,6 +251,7 @@ export default function EditShootPage({ params }: PageProps) {
             .map((tm) => tm.userId),
         );
         form.setValue("executorId", extendedShootData.executorId ?? "");
+        form.setValue("poc", extendedShootData.poc ?? "");
 
         // Fetch locations for the client
         if (shootData.clientId) {
@@ -340,6 +343,11 @@ export default function EditShootPage({ params }: PageProps) {
       // Add executor ID
       if (data.executorId) {
         formData.append("executorId", data.executorId);
+      }
+
+      // Add POC
+      if (data.poc) {
+        formData.append("poc", data.poc);
       }
 
       await updateShoot(shootId, formData);
@@ -617,6 +625,26 @@ export default function EditShootPage({ params }: PageProps) {
                           {...field}
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="poc"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Point of Contact (POC)</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter point of contact name"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        The main contact person for this shoot
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

@@ -61,6 +61,7 @@ interface Shoot {
     id: string;
     name: string | null;
   } | null;
+  poc?: string | null;
   teamMembers?: Array<{
     userId: string;
     assignmentType: string;
@@ -286,6 +287,7 @@ export function ShootsTable({ shoots, clients }: ShootsTableProps) {
             <TableHead>Start Date</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Executor</TableHead>
+            <TableHead>POC</TableHead>
             <TableHead>Team Assigned</TableHead>
             <TableHead>Remarks</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -349,6 +351,13 @@ export function ShootsTable({ shoots, clients }: ShootsTableProps) {
                   <span className="font-medium">{shoot.executor.name}</span>
                 ) : (
                   <span className="text-muted-foreground">Not assigned</span>
+                )}
+              </TableCell>
+              <TableCell>
+                {shoot.poc ? (
+                  <span className="font-medium">{shoot.poc}</span>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
                 )}
               </TableCell>
               <TableCell>
