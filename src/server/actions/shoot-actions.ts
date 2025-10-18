@@ -24,6 +24,7 @@ const createShootSchema = z.object({
   editingCost: z.string().optional(),
   photographerIds: z.array(z.string()).optional(), // Will map to assignmentType: "photographer"
   editorIds: z.array(z.string()).optional(), // Will map to assignmentType: "editor"
+  executorId: z.string().optional(), // The person who completed the shoot
 });
 
 const updateShootSchema = z.object({
@@ -46,6 +47,7 @@ const updateShootSchema = z.object({
   editingCost: z.string().optional(),
   photographerIds: z.array(z.string()).optional(),
   editorIds: z.array(z.string()).optional(),
+  executorId: z.string().optional(), // The person who completed the shoot
 });
 
 // Function to generate unique Shoot ID
@@ -80,6 +82,7 @@ export async function createShoot(formData: FormData) {
       editingCost: (formData.get("editingCost") as string) || undefined,
       photographerIds: formData.getAll("photographerIds") as string[],
       editorIds: formData.getAll("editorIds") as string[],
+      executorId: (formData.get("executorId") as string) || undefined,
     };
 
     // Get shoot type to generate ID
@@ -146,6 +149,7 @@ export async function createShoot(formData: FormData) {
         photographyCost: photographyCostFloat,
         travelCost: travelCostFloat,
         editingCost: editingCostFloat,
+        executorId: validatedData.executorId, // Executor who will complete the shoot
         status: "planned",
       },
     });
@@ -200,6 +204,7 @@ export async function getShoots() {
         client: true,
         shootType: true,
         location: true,
+        executor: true,
         teamMembers: {
           include: {
             user: true,
@@ -246,6 +251,7 @@ export async function updateShoot(id: string, formData: FormData) {
       photographerIds:
         rawPhotographerIds.length > 0 ? rawPhotographerIds : undefined,
       editorIds: rawEditorIds.length > 0 ? rawEditorIds : undefined,
+      executorId: (formData.get("executorId") as string) || undefined,
     };
 
     const validatedData = updateShootSchema.parse(rawData);
@@ -302,6 +308,7 @@ export async function updateShoot(id: string, formData: FormData) {
         photographyCost: photographyCostFloat,
         travelCost: travelCostFloat,
         editingCost: editingCostFloat,
+        executorId: validatedData.executorId,
       },
     });
 
@@ -403,6 +410,7 @@ export async function getShootById(id: string) {
         shootType: true,
         location: true,
         cluster: true,
+        executor: true,
         teamMembers: {
           include: {
             user: true,

@@ -112,6 +112,7 @@ export default function CreateShootPage() {
       editingCost: "",
       photographerIds: [],
       editorIds: [],
+      executorId: "",
     },
   });
 
@@ -214,6 +215,11 @@ export default function CreateShootPage() {
         data.editorIds.forEach((id) => {
           formData.append("editorIds", id);
         });
+      }
+
+      // Add executor ID
+      if (data.executorId) {
+        formData.append("executorId", data.executorId);
       }
 
       await createShoot(formData);
@@ -743,6 +749,56 @@ export default function CreateShootPage() {
                             {...field}
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Executor Selection */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Executor</CardTitle>
+                  <CardDescription>
+                    Select the person who will complete this shoot
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="executorId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Executor</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select an executor" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {teamMembers
+                              .filter((member) => 
+                                member.roles.includes("photographer") || 
+                                member.roles.includes("editor")
+                              )
+                              .map((member) => (
+                                <SelectItem key={member.id} value={member.id}>
+                                  {member.name}
+                                  {member.specialties.length > 0 && (
+                                    <span className="text-muted-foreground text-xs">
+                                      {" "}
+                                      ({member.specialties.join(", ")})
+                                    </span>
+                                  )}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Choose from the selected team members who will complete this shoot
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

@@ -57,6 +57,10 @@ interface Shoot {
   location: {
     name: string;
   } | null;
+  executor: {
+    id: string;
+    name: string | null;
+  } | null;
   teamMembers?: Array<{
     userId: string;
     assignmentType: string;
@@ -281,6 +285,7 @@ export function ShootsTable({ shoots, clients }: ShootsTableProps) {
             <TableHead>Location</TableHead>
             <TableHead>Start Date</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Executor</TableHead>
             <TableHead>Team Assigned</TableHead>
             <TableHead>Remarks</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -338,6 +343,13 @@ export function ShootsTable({ shoots, clients }: ShootsTableProps) {
                     <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
+              </TableCell>
+              <TableCell>
+                {shoot.executor ? (
+                  <span className="font-medium">{shoot.executor.name}</span>
+                ) : (
+                  <span className="text-muted-foreground">Not assigned</span>
+                )}
               </TableCell>
               <TableCell>
                 <Badge variant="outline">{getTeamAssigned(shoot)}</Badge>

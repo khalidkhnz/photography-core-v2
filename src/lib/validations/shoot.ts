@@ -20,6 +20,7 @@ export const createShootSchema = z.object({
   editingCost: z.string().optional(), // Will be converted to Float on server
   photographerIds: z.array(z.string()).optional(),
   editorIds: z.array(z.string()).optional(),
+  executorId: z.string().optional(), // The person who completed the shoot
 });
 
 export const updateShootSchema = z.object({
@@ -43,6 +44,7 @@ export const updateShootSchema = z.object({
   editingCost: z.string().optional(),
   photographerIds: z.array(z.string()).optional(),
   editorIds: z.array(z.string()).optional(),
+  executorId: z.string().optional(), // The person who completed the shoot
 });
 
 export const createClusterSchema = z.object({
