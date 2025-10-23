@@ -1,7 +1,4 @@
-import { getShoots } from "@/server/actions/shoot-actions";
-import { getClients } from "@/server/actions/client-actions";
-import { getTeamMembers } from "@/server/actions/user-actions";
-import { getShootTypes } from "@/server/actions/shoot-type-actions";
+import { getAllDashboardData } from "@/server/actions/dashboard-actions";
 import {
   Card,
   CardContent,
@@ -11,309 +8,281 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { DashboardCharts } from "@/components/dashboard-charts";
+import {
   Camera,
-  Users,
-  Calendar,
-  Building2,
-  Tag,
   TrendingUp,
   Clock,
   CheckCircle,
-  XCircle,
+  AlertTriangle,
+  DollarSign,
+  Calendar,
+  Filter,
+  BarChart3,
 } from "lucide-react";
 import Link from "next/link";
+import { format } from "date-fns";
 
 export default async function DashboardPage() {
-  const [shoots, clients, teamMembers, shootTypes] = await Promise.all([
-    getShoots(),
-    getClients(),
-    getTeamMembers(["photographer", "editor"]),
-    getShootTypes(),
-  ]);
-
-  // Calculate statistics
-  const totalShoots = shoots.length;
-  const plannedShoots = shoots.filter(
-    (shoot) => shoot.status === "planned",
-  ).length;
-  const inProgressShoots = shoots.filter(
-    (shoot) => shoot.status === "in_progress",
-  ).length;
-  const editingShoots = shoots.filter(
-    (shoot) => shoot.status === "editing",
-  ).length;
-  const deliveredShoots = shoots.filter(
-    (shoot) => shoot.status === "delivered",
-  ).length;
-  const completedShoots = shoots.filter(
-    (shoot) => shoot.status === "completed",
-  ).length;
-  const blockedShoots = shoots.filter(
-    (shoot) => shoot.status === "blocked",
-  ).length;
-  const postponedShoots = shoots.filter(
-    (shoot) => shoot.status === "postponed",
-  ).length;
-  const cancelledShoots = shoots.filter(
-    (shoot) => shoot.status === "cancelled",
-  ).length;
-
-  const activePhotographers = teamMembers.filter(
-    (member) => member.isActive && member.roles.includes("photographer"),
-  ).length;
-  const activeEditors = teamMembers.filter(
-    (member) => member.isActive && member.roles.includes("editor"),
-  ).length;
-  const totalLocations = clients.reduce(
-    (sum, client) => sum + (client.locations?.length || 0),
-    0,
-  );
-
-  // Recent shoots (last 5)
-  const recentShoots = shoots.slice(0, 5);
+  // Fetch all dashboard data through server actions
+  const { stats, monthlyGrowth, cityGrowth, clientGrowth } = await getAllDashboardData();
+  
+  // Extract statistics
+  const {
+    plannedShoots,
+    inProgressShoots,
+    deliveredShoots,
+    issueShoots,
+    unpaidShoots
+  } = stats;
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
-          Welcome to your photography management system
+          Photography operations management and growth tracking
         </p>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Shoots</CardTitle>
-            <Camera className="text-muted-foreground h-4 w-4" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalShoots}</div>
-            <p className="text-muted-foreground text-xs">
-              All photography shoots
-            </p>
-          </CardContent>
-        </Card>
+      {/* Histogram / Growth Tracker */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Growth Tracker
+          </CardTitle>
+          <CardDescription>
+            Shoot count aggregation by date, week, month, city, and client level
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DashboardCharts 
+            monthlyGrowth={monthlyGrowth}
+            cityGrowth={cityGrowth}
+            clientGrowth={clientGrowth}
+          />
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Team</CardTitle>
-            <Users className="text-muted-foreground h-4 w-4" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {activePhotographers + activeEditors}
-            </div>
-            <p className="text-muted-foreground text-xs">
-              {activePhotographers} photographers, {activeEditors} editors
-            </p>
-          </CardContent>
-        </Card>
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filters
+          </CardTitle>
+          <CardDescription>
+            Filter shoots by status: Planned, Shoot in Progress, and Delivered
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Planned</CardTitle>
+                <Clock className="h-4 w-4 text-blue-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">
+                  {plannedShoots}
+                </div>
+                <p className="text-muted-foreground text-xs">
+                  Shoots ready to start
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Clients</CardTitle>
-            <Building2 className="text-muted-foreground h-4 w-4" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{clients.length}</div>
-            <p className="text-muted-foreground text-xs">
-              {totalLocations} total locations
-            </p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Shoot in Progress</CardTitle>
+                <TrendingUp className="h-4 w-4 text-yellow-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-yellow-600">
+                  {inProgressShoots}
+                </div>
+                <p className="text-muted-foreground text-xs">
+                  Currently being shot
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Shoot Types</CardTitle>
-            <Tag className="text-muted-foreground h-4 w-4" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{shootTypes.length}</div>
-            <p className="text-muted-foreground text-xs">
-              Available shoot categories
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Delivered</CardTitle>
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  {deliveredShoots}
+                </div>
+                <p className="text-muted-foreground text-xs">
+                  Successfully completed
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Shoot Status Overview */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Issues View */}
+      {issueShoots.length > 0 && (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Planned</CardTitle>
-            <Clock className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {plannedShoots}
-            </div>
-            <p className="text-muted-foreground text-xs">
-              Shoots ready to start
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active</CardTitle>
-            <TrendingUp className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
-              {inProgressShoots + editingShoots}
-            </div>
-            <p className="text-muted-foreground text-xs">
-              In progress & editing
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Delivered</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {deliveredShoots + completedShoots}
-            </div>
-            <p className="text-muted-foreground text-xs">
-              Successfully finished
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Issues</CardTitle>
-            <XCircle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {blockedShoots + postponedShoots + cancelledShoots}
-            </div>
-            <p className="text-muted-foreground text-xs">
-              Blocked, postponed, cancelled
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
           <CardHeader>
-            <CardTitle>Recent Shoots</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              Issues
+            </CardTitle>
             <CardDescription>
-              Latest photography shoots in your system
+              Shoots marked with issues requiring attention
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {recentShoots.length === 0 ? (
-              <div className="py-6 text-center">
-                <Calendar className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-                <h3 className="mb-2 text-lg font-semibold">No shoots yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Get started by creating your first photography shoot
-                </p>
-                <Link
-                  href="/dashboard/shoots/new"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium"
-                >
-                  <Camera className="mr-2 h-4 w-4" />
-                  Create Shoot
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {recentShoots.map((shoot) => (
-                  <div
-                    key={shoot.id}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="space-y-1">
-                      <p className="text-sm leading-none font-medium">
-                        {shoot.shootId}
-                      </p>
-                      <p className="text-muted-foreground text-sm">
-                        {shoot.client.name} • {shoot.shootType.name}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge
-                        variant={
-                          shoot.status === "planned"
-                            ? "secondary"
-                            : shoot.status === "in_progress"
-                              ? "default"
-                              : shoot.status === "completed"
-                                ? "default"
-                                : "destructive"
-                        }
-                      >
-                        {shoot.status.replace("_", " ")}
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Shoot ID</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Project Name</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {issueShoots.slice(0, 10).map((shoot) => (
+                  <TableRow key={shoot.id}>
+                    <TableCell className="font-medium">{shoot.shootId}</TableCell>
+                    <TableCell>{shoot.client.name}</TableCell>
+                    <TableCell>{shoot.projectName ?? 'N/A'}</TableCell>
+                    <TableCell>
+                      <Badge variant="destructive">
+                        {shoot.status.replace('_', ' ')}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
                       <Link
                         href={`/dashboard/shoots/${shoot.id}`}
                         className="text-primary text-sm hover:underline"
                       >
-                        View
+                        View Details
                       </Link>
-                    </div>
-                  </div>
+                    </TableCell>
+                  </TableRow>
                 ))}
-                <div className="pt-2">
-                  <Link
-                    href="/dashboard/shoots"
-                    className="text-primary text-sm hover:underline"
-                  >
-                    View all shoots →
-                  </Link>
-                </div>
+              </TableBody>
+            </Table>
+            {issueShoots.length > 10 && (
+              <div className="mt-4 text-center">
+                <Link
+                  href="/dashboard/shoots?filter=issues"
+                  className="text-primary text-sm hover:underline"
+                >
+                  View all {issueShoots.length} issues →
+                </Link>
               </div>
             )}
           </CardContent>
         </Card>
+      )}
 
-        <Card className="col-span-3">
+      {/* Unpaid/On-hold Shoots */}
+      {unpaidShoots.length > 0 && (
+        <Card>
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common tasks and shortcuts</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-orange-600" />
+              Unpaid/On-hold Shoots
+            </CardTitle>
+            <CardDescription>
+              Delivered shoots with outstanding payments or cost tracking issues
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <Link
-              href="/dashboard/shoots/new"
-              className="hover:bg-muted flex items-center space-x-2 rounded-md p-2 transition-colors"
-            >
-              <Camera className="h-4 w-4" />
-              <span className="text-sm">Create New Shoot</span>
-            </Link>
-            <Link
-              href="/dashboard/clients/new"
-              className="hover:bg-muted flex items-center space-x-2 rounded-md p-2 transition-colors"
-            >
-              <Building2 className="h-4 w-4" />
-              <span className="text-sm">Add New Client</span>
-            </Link>
-            <Link
-              href="/dashboard/team/new"
-              className="hover:bg-muted flex items-center space-x-2 rounded-md p-2 transition-colors"
-            >
-              <Users className="h-4 w-4" />
-              <span className="text-sm">Add Team Member</span>
-            </Link>
-            <Link
-              href="/dashboard/shoot-types/new"
-              className="hover:bg-muted flex items-center space-x-2 rounded-md p-2 transition-colors"
-            >
-              <Tag className="h-4 w-4" />
-              <span className="text-sm">Add Shoot Type</span>
-            </Link>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Shoot ID</TableHead>
+                  <TableHead>Project Name</TableHead>
+                  <TableHead>Team</TableHead>
+                  <TableHead>Delivery Date</TableHead>
+                  <TableHead>Cost</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {unpaidShoots.slice(0, 10).map((shoot) => {
+                  const teamMembers = shoot.teamMembers?.map(tm => tm.user.name).filter(Boolean).join(', ') ?? 'N/A';
+                  const totalCost = (shoot.photographyCost ?? 0) + (shoot.travelCost ?? 0) + (shoot.editingCost ?? 0);
+                  
+                  return (
+                    <TableRow key={shoot.id}>
+                      <TableCell className="font-medium">{shoot.shootId}</TableCell>
+                      <TableCell>{shoot.projectName ?? 'N/A'}</TableCell>
+                      <TableCell>{teamMembers}</TableCell>
+                      <TableCell>
+                        {shoot.shootEndDate ? format(new Date(shoot.shootEndDate), 'MMM dd, yyyy') : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        ₹{totalCost.toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <Link
+                          href={`/dashboard/shoots/${shoot.id}`}
+                          className="text-primary text-sm hover:underline"
+                        >
+                          View Details
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            {unpaidShoots.length > 10 && (
+              <div className="mt-4 text-center">
+                <Link
+                  href="/dashboard/shoots?filter=unpaid"
+                  className="text-primary text-sm hover:underline"
+                >
+                  View all {unpaidShoots.length} unpaid shoots →
+                </Link>
+              </div>
+            )}
           </CardContent>
         </Card>
-      </div>
+      )}
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>Common tasks and shortcuts</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Link
+            href="/dashboard/shoots/new"
+            className="hover:bg-muted flex items-center space-x-2 rounded-md p-2 transition-colors"
+          >
+            <Camera className="h-4 w-4" />
+            <span className="text-sm">Create New Shoot</span>
+          </Link>
+          <Link
+            href="/dashboard/shoots"
+            className="hover:bg-muted flex items-center space-x-2 rounded-md p-2 transition-colors"
+          >
+            <Calendar className="h-4 w-4" />
+            <span className="text-sm">View All Shoots</span>
+          </Link>
+        </CardContent>
+      </Card>
     </div>
   );
 }

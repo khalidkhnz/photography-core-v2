@@ -4,6 +4,7 @@ import { db } from "@/server/db";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { refreshDashboardData } from "./dashboard-actions";
 
 const createShootSchema = z.object({
   clientId: z.string().min(1, "Client is required"),
@@ -191,6 +192,7 @@ export async function createShoot(formData: FormData) {
     }
 
     revalidatePath("/dashboard/shoots");
+    await refreshDashboardData();
   } catch (error) {
     console.error("Error creating shoot:", error);
     throw new Error(
@@ -356,6 +358,7 @@ export async function updateShoot(id: string, formData: FormData) {
 
     revalidatePath("/dashboard/shoots");
     revalidatePath(`/dashboard/shoots/${id}`);
+    await refreshDashboardData();
   } catch (error) {
     console.error("Error updating shoot:", error);
     throw new Error(
@@ -388,6 +391,7 @@ export async function updateShootStatus(id: string, status: string) {
 
     revalidatePath("/dashboard/shoots");
     revalidatePath(`/dashboard/shoots/${id}`);
+    await refreshDashboardData();
   } catch (error) {
     console.error("Error updating shoot status:", error);
     throw new Error("Failed to update shoot status");
@@ -401,6 +405,7 @@ export async function deleteShoot(id: string) {
     });
 
     revalidatePath("/dashboard/shoots");
+    await refreshDashboardData();
   } catch (error) {
     console.error("Error deleting shoot:", error);
     throw new Error("Failed to delete shoot");
