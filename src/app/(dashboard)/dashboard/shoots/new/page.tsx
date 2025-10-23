@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createShoot } from "@/server/actions/shoot-actions";
+import { createShoot, generateShootIdAction, checkShootIdUniqueness } from "@/server/actions/shoot-actions";
 import { getClients } from "@/server/actions/client-actions";
 import { getShootTypes } from "@/server/actions/shoot-type-actions";
 import { getLocationsByClient } from "@/server/actions/location-actions";
@@ -94,6 +95,7 @@ export default function CreateShootPage() {
   const form = useForm<CreateShootFormData>({
     resolver: zodResolver(createShootSchema),
     defaultValues: {
+      shootId: "",
       clientId: "",
       shootTypeId: "",
       locationId: "",
@@ -180,9 +182,17 @@ export default function CreateShootPage() {
     setError("");
 
     try {
+      
+      // Validate shootId before submission
+      if (!data.shootId || data.shootId.trim() === "") {
+        toast.error("Shoot ID is required");
+        setIsLoading(false);
+        return;
+      }
+      
       // Convert the form data to FormData for the server action
       const formData = new FormData();
-      // Shoot ID will be auto-generated on the server
+      formData.append("shootId", data.shootId.trim());
       formData.append("clientId", data.clientId);
       formData.append("shootTypeId", data.shootTypeId);
       if (data.locationId) formData.append("locationId", data.locationId);
@@ -228,12 +238,20 @@ export default function CreateShootPage() {
         formData.append("poc", data.poc);
       }
 
-      await createShoot(formData);
-      void router.push("/dashboard/shoots");
+      const result = await createShoot(formData);
+      
+      if (result.success) {
+        toast.success("Shoot created successfully!");
+        router.push("/dashboard/shoots");
+      } else {
+        toast.error(result.error || "Failed to create shoot");
+        setError(result.error || "Failed to create shoot");
+      }
     } catch (error) {
-      setError(
-        error instanceof Error ? error.message : "Failed to create shoot",
-      );
+      console.error("Error creating shoot:", error);
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+      toast.error(errorMessage);
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -333,6 +351,53 @@ export default function CreateShootPage() {
                             ))}
                           </SelectContent>
                         </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="shootId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Shoot ID *</FormLabel>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input
+                              placeholder="Enter Shoot ID (e.g., RE-2024-001)"
+                              {...field}
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={async () => {
+                              const shootTypeId = form.getValues("shootTypeId");
+                              if (!shootTypeId) {
+                                toast.error("Please select a shoot type first");
+                                return;
+                              }
+                              try {
+                                const result = await generateShootIdAction(shootTypeId);
+                                if (result.success && result.shootId) {
+                                  form.setValue("shootId", result.shootId);
+                                  toast.success("Shoot ID generated successfully!");
+                                } else {
+                                  toast.error(result.error || "Failed to generate Shoot ID");
+                                }
+                              } catch (error) {
+                                console.error("Error generating Shoot ID:", error);
+                                toast.error("Failed to generate Shoot ID");
+                              }
+                            }}
+                          >
+                            Generate
+                          </Button>
+                        </div>
+                        <FormDescription>
+                          Enter a unique Shoot ID or click Generate to auto-create one
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

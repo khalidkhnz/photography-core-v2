@@ -4,6 +4,7 @@ import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SessionProviderWrapper } from "@/components/session-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "BookThatStudio - Photography Core",
@@ -30,6 +31,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             {children}
+            <Toaster />
           </ThemeProvider>
         </SessionProviderWrapper>
       </body>

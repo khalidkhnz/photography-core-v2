@@ -116,8 +116,9 @@ export function ShootsTable({ shoots, clients }: ShootsTableProps) {
       // Search filter
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch =
-        (!searchQuery || shoot.shootId.toLowerCase().includes(searchLower)) ??
-        shoot.projectName?.toLowerCase().includes(searchLower) ??
+        !searchQuery ||
+        shoot.shootId.toLowerCase().includes(searchLower) ||
+        shoot.projectName?.toLowerCase().includes(searchLower) ||
         shoot.remarks?.toLowerCase().includes(searchLower);
 
       // Client filter
@@ -165,12 +166,16 @@ export function ShootsTable({ shoots, clients }: ShootsTableProps) {
     switch (shoot.status) {
       case "planned":
       case "in_progress":
-        return photographers.length > 0 ? "Photographers" : "Not Assigned";
+        if (photographers.length > 0) {
+          return photographers.map(tm => tm.user.name).filter(Boolean).join(", ");
+        }
+        return "Not Assigned";
       case "editing":
       case "delivered":
-        return editors.length > 0 ? "Editors" : "Not Assigned";
-      case "completed":
-        return "Completed";
+        if (editors.length > 0) {
+          return editors.map(tm => tm.user.name).filter(Boolean).join(", ");
+        }
+        return "Not Assigned";
       default:
         return "—";
     }
@@ -226,13 +231,11 @@ export function ShootsTable({ shoots, clients }: ShootsTableProps) {
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="planned">Planned</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="in_progress">Shoot in Progress</SelectItem>
               <SelectItem value="editing">Editing</SelectItem>
               <SelectItem value="delivered">Delivered</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
               <SelectItem value="blocked">Blocked</SelectItem>
               <SelectItem value="postponed">Postponed</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
 
@@ -282,7 +285,6 @@ export function ShootsTable({ shoots, clients }: ShootsTableProps) {
             <TableHead>Shoot ID</TableHead>
             <TableHead>Project Name</TableHead>
             <TableHead>Client</TableHead>
-            <TableHead>Type</TableHead>
             <TableHead>Location</TableHead>
             <TableHead>Start Date</TableHead>
             <TableHead>Status</TableHead>
@@ -303,9 +305,6 @@ export function ShootsTable({ shoots, clients }: ShootsTableProps) {
                 )}
               </TableCell>
               <TableCell>{shoot.client.name}</TableCell>
-              <TableCell>
-                <Badge variant="outline">{shoot.shootType.name}</Badge>
-              </TableCell>
               <TableCell>
                 {shoot.location ? (
                   <div className="flex items-center">
@@ -336,13 +335,11 @@ export function ShootsTable({ shoots, clients }: ShootsTableProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="planned">Planned</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="in_progress">Shoot in Progress</SelectItem>
                     <SelectItem value="editing">Editing</SelectItem>
                     <SelectItem value="delivered">Delivered</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
                     <SelectItem value="blocked">Blocked</SelectItem>
                     <SelectItem value="postponed">Postponed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
               </TableCell>

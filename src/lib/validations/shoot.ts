@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const createShootSchema = z.object({
+  shootId: z.string().min(1, "Shoot ID is required"),
   clientId: z.string().min(1, "Client is required"),
   shootTypeId: z.string().min(1, "Shoot type is required"),
   locationId: z.string().optional(),

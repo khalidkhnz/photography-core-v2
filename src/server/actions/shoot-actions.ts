@@ -3,7 +3,6 @@
 import { db } from "@/server/db";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { refreshDashboardData } from "./dashboard-actions";
 
 const createShootSchema = z.object({
@@ -62,9 +61,63 @@ function generateShootId(shootTypeCode: string): string {
   return `${shootTypeCode}-${timestamp}-${random}`;
 }
 
+// Server action to generate Shoot ID
+export async function generateShootIdAction(shootTypeId: string) {
+  try {
+    const shootType = await db.shootType.findUnique({
+      where: { id: shootTypeId },
+    });
+
+    if (!shootType) {
+      return { success: false, error: "Invalid shoot type" };
+    }
+
+    let shootId: string;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    do {
+      shootId = generateShootId(shootType.code);
+      const existingShoot = await db.shoot.findUnique({
+        where: { shootId },
+      });
+      if (!existingShoot) break;
+      attempts++;
+    } while (attempts < maxAttempts);
+
+    if (attempts >= maxAttempts) {
+      return { success: false, error: "Failed to generate unique shoot ID" };
+    }
+
+    return { success: true, shootId };
+  } catch (error) {
+    console.error("Error generating shoot ID:", error);
+    return { success: false, error: "Failed to generate shoot ID" };
+  }
+}
+
+// Server action to check Shoot ID uniqueness
+export async function checkShootIdUniqueness(shootId: string) {
+  try {
+    if (!shootId || shootId.trim() === "") {
+      return { isUnique: false, exists: false, error: "Shoot ID is required" };
+    }
+
+    const existingShoot = await db.shoot.findUnique({
+      where: { shootId: shootId.trim() },
+    });
+
+    return { isUnique: !existingShoot, exists: !!existingShoot };
+  } catch (error) {
+    console.error("Error checking shoot ID uniqueness:", error);
+    throw new Error("Failed to check shoot ID uniqueness");
+  }
+}
+
 export async function createShoot(formData: FormData) {
   try {
     const rawData = {
+      shootId: formData.get("shootId") as string,
       clientId: formData.get("clientId") as string,
       shootTypeId: formData.get("shootTypeId") as string,
       locationId: (formData.get("locationId") as string) || undefined,
@@ -89,34 +142,19 @@ export async function createShoot(formData: FormData) {
       poc: (formData.get("poc") as string) || undefined,
     };
 
-    // Get shoot type to generate ID
-    const shootType = await db.shootType.findUnique({
-      where: { id: rawData.shootTypeId },
-    });
 
-    if (!shootType) {
-      throw new Error("Invalid shoot type");
+    // Check if Shoot ID is unique
+    if (!rawData.shootId || rawData.shootId.trim() === "") {
+      return { success: false, error: "Shoot ID is required" };
     }
 
-    // Generate unique shoot ID
-    let shootId: string;
-    let attempts = 0;
-    const maxAttempts = 10;
-
-    do {
-      shootId = generateShootId(shootType.code);
-      const existingShoot = await db.shoot.findUnique({
-        where: { shootId },
-      });
-      if (!existingShoot) break;
-      attempts++;
-    } while (attempts < maxAttempts);
-
-    if (attempts >= maxAttempts) {
-      throw new Error("Failed to generate unique shoot ID");
+    const shootIdCheck = await checkShootIdUniqueness(rawData.shootId);
+    if (!shootIdCheck.isUnique) {
+      return { success: false, error: "Shoot ID already exists. Please choose a different ID." };
     }
 
     const validatedData = createShootSchema.parse(rawData);
+    
 
     // Convert cost strings to floats
     const photographyCostFloat = validatedData.photographyCost
@@ -128,6 +166,13 @@ export async function createShoot(formData: FormData) {
     const editingCostFloat = validatedData.editingCost
       ? parseFloat(validatedData.editingCost)
       : undefined;
+
+    // Ensure shootId is a string
+    const shootId = String(rawData.shootId).trim();
+    
+    if (!shootId || shootId === "") {
+      throw new Error("Shoot ID is required for shoot creation");
+    }
 
     // Create the shoot
     const shoot = await db.shoot.create({
@@ -193,14 +238,25 @@ export async function createShoot(formData: FormData) {
 
     revalidatePath("/dashboard/shoots");
     await refreshDashboardData();
+    
+    return { success: true, shootId: shoot.shootId };
   } catch (error) {
     console.error("Error creating shoot:", error);
-    throw new Error(
-      error instanceof Error ? error.message : "Failed to create shoot",
-    );
+    
+    // Handle unique constraint violation
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+      return { success: false, error: "Shoot ID already exists. Please choose a different ID." };
+    }
+    
+    if (error instanceof Error && error.message.includes("Unique constraint failed")) {
+      return { success: false, error: "Shoot ID already exists. Please choose a different ID." };
+    }
+    
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Failed to create shoot" 
+    };
   }
-
-  redirect("/dashboard/shoots");
 }
 
 export async function getShoots() {
