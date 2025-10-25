@@ -44,12 +44,36 @@ async function main() {
 
   console.log("✅ Created shoot types");
 
-  // Create sample clients (trade names only)
+  // Create sample clients with full details
   const clients = [
-    { name: "John Doe Photography" },
-    { name: "Jane Smith Studios" },
-    { name: "ABC Real Estate" },
-    { name: "XYZ Events" },
+    { 
+      name: "John Doe Photography",
+      email: "contact@johndoephotography.com",
+      phone: "+1-555-0100",
+      address: "123 Photography Lane, New York, NY 10001",
+      poc: "John Doe"
+    },
+    { 
+      name: "Jane Smith Studios",
+      email: "info@janesmithstudios.com",
+      phone: "+1-555-0101",
+      address: "456 Studio Street, New York, NY 10002",
+      poc: "Jane Smith"
+    },
+    { 
+      name: "ABC Real Estate",
+      email: "contact@abcrealestate.com",
+      phone: "+1-555-0102",
+      address: "789 Real Estate Blvd, New York, NY 10003",
+      poc: "Robert Brown"
+    },
+    { 
+      name: "XYZ Events",
+      email: "events@xyzevents.com",
+      phone: "+1-555-0103",
+      address: "321 Event Avenue, New York, NY 10004",
+      poc: "Tom Anderson"
+    },
   ];
 
   for (const client of clients) {
@@ -253,6 +277,124 @@ async function main() {
 
   console.log("✅ Created sample POCs for sites");
 
+  // Get created data for shoots
+  const createdShootTypes = await prisma.shootType.findMany();
+  const createdPOCs = await prisma.pOC.findMany();
+
+  // Create sample shoots with hierarchical data
+  const shootData = [
+    {
+      shootId: "RE-2024-001",
+      clientName: "ABC Real Estate",
+      entityName: "ABC Real Estate Group",
+      siteName: "Main Office",
+      pocName: "Robert Brown",
+      shootTypeCode: "RE",
+      projectName: "Luxury Condo Marketing",
+      remarks: "High-end real estate photography for luxury condominium",
+      shootStartDate: new Date("2024-01-15T09:00:00Z"),
+      shootEndDate: new Date("2024-01-15T17:00:00Z"),
+      photographerNotes: "Focus on natural lighting and wide angles",
+      editorNotes: "Enhance colors and remove minor imperfections",
+      workflowType: "shift",
+      photographyCost: 500.00,
+      travelCost: 50.00,
+      editingCost: 200.00,
+    },
+    {
+      shootId: "DR-2024-002",
+      clientName: "John Doe Photography",
+      entityName: "John Doe Photography LLC",
+      siteName: "Downtown Studio",
+      pocName: "John Doe",
+      shootTypeCode: "DR",
+      projectName: "Aerial Property Survey",
+      remarks: "Drone photography for property assessment",
+      shootStartDate: new Date("2024-01-20T10:00:00Z"),
+      shootEndDate: new Date("2024-01-20T14:00:00Z"),
+      photographerNotes: "Weather conditions: Clear, light wind",
+      editorNotes: "Stitch aerial photos for panoramic view",
+      workflowType: "shift",
+      photographyCost: 800.00,
+      travelCost: 100.00,
+      editingCost: 300.00,
+    },
+    {
+      shootId: "EV-2024-003",
+      clientName: "XYZ Events",
+      entityName: "XYZ Events Corporation",
+      siteName: "Event Hall",
+      pocName: "Tom Anderson",
+      shootTypeCode: "EV",
+      projectName: "Corporate Gala",
+      remarks: "Full event coverage including ceremony and reception",
+      shootStartDate: new Date("2024-01-25T18:00:00Z"),
+      shootEndDate: new Date("2024-01-25T23:00:00Z"),
+      photographerNotes: "Multiple photographers needed for large event",
+      editorNotes: "Quick turnaround for social media posts",
+      workflowType: "shift",
+      photographyCost: 1200.00,
+      travelCost: 0.00,
+      editingCost: 400.00,
+    },
+    {
+      shootId: "VT-2024-004",
+      clientName: "ABC Real Estate",
+      entityName: "ABC Real Estate Holdings",
+      siteName: "Secondary Office",
+      pocName: "Lisa Davis",
+      shootTypeCode: "VT",
+      projectName: "Virtual Office Tour",
+      remarks: "360-degree virtual tour for remote viewing",
+      shootStartDate: new Date("2024-01-30T11:00:00Z"),
+      shootEndDate: new Date("2024-01-30T15:00:00Z"),
+      photographerNotes: "Use 360-degree camera equipment",
+      editorNotes: "Create interactive virtual tour",
+      workflowType: "project",
+      photographyCost: 600.00,
+      travelCost: 75.00,
+      editingCost: 500.00,
+    },
+  ];
+
+  for (const shoot of shootData) {
+    const client = createdClients.find((c) => c.name === shoot.clientName);
+    const entity = createdEntities.find((e) => e.name === shoot.entityName);
+    const site = createdSites.find((s) => s.name === shoot.siteName);
+    const poc = createdPOCs.find((p) => p.name === shoot.pocName);
+    const shootType = createdShootTypes.find((st) => st.code === shoot.shootTypeCode);
+
+    if (client && entity && site && poc && shootType) {
+      try {
+        await prisma.shoot.create({
+          data: {
+            shootId: shoot.shootId,
+            clientId: client.id,
+            entityId: entity.id,
+            siteId: site.id,
+            pocId: poc.id,
+            shootTypeId: shootType.id,
+            projectName: shoot.projectName,
+            remarks: shoot.remarks,
+            shootStartDate: shoot.shootStartDate,
+            shootEndDate: shoot.shootEndDate,
+            photographerNotes: shoot.photographerNotes,
+            editorNotes: shoot.editorNotes,
+            workflowType: shoot.workflowType,
+            photographyCost: shoot.photographyCost,
+            travelCost: shoot.travelCost,
+            editingCost: shoot.editingCost,
+            status: "planned",
+          },
+        });
+      } catch (error) {
+        console.log(`Shoot ${shoot.shootId} already exists, skipping...`);
+      }
+    }
+  }
+
+  console.log("✅ Created sample shoots with hierarchical data");
+
   // Create team members with different role combinations
   const teamMemberPassword = await bcrypt.hash("team123", 12);
 
@@ -333,6 +475,11 @@ async function main() {
           name: member.name,
           email: member.email,
           password: teamMemberPassword,
+          phone: member.phone,
+          roles: member.roles,
+          specialties: member.specialties,
+          rating: member.rating,
+          isActive: true,
         },
       });
     } catch (error) {
