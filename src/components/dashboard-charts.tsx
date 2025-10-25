@@ -37,23 +37,19 @@ interface MonthlyGrowthData {
   delivered: number;
 }
 
-interface CityGrowthData {
-  [key: string]: {
-    total: number;
-    planned: number;
-    inProgress: number;
-    delivered: number;
-  };
-}
+type CityGrowthData = Record<string, {
+  total: number;
+  planned: number;
+  inProgress: number;
+  delivered: number;
+}>;
 
-interface ClientGrowthData {
-  [key: string]: {
-    total: number;
-    planned: number;
-    inProgress: number;
-    delivered: number;
-  };
-}
+type ClientGrowthData = Record<string, {
+  total: number;
+  planned: number;
+  inProgress: number;
+  delivered: number;
+}>;
 
 interface DashboardChartsProps {
   monthlyGrowth: MonthlyGrowthData[];

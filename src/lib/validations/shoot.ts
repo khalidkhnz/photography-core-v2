@@ -3,6 +3,9 @@ import { z } from "zod";
 export const createShootSchema = z.object({
   shootId: z.string().min(1, "Shoot ID is required"),
   clientId: z.string().min(1, "Client is required"),
+  entityId: z.string().optional(),
+  siteId: z.string().optional(),
+  pocId: z.string().optional(),
   shootTypeId: z.string().min(1, "Shoot type is required"),
   locationId: z.string().optional(),
   clusterId: z.string().optional(),
@@ -22,15 +25,17 @@ export const createShootSchema = z.object({
   photographerIds: z.array(z.string()).optional(),
   editorIds: z.array(z.string()).optional(),
   executorId: z.string().optional(), // The person who completed the shoot
-  poc: z.string().optional(), // Point of Contact for the shoot
 });
 
 export const updateShootSchema = z.object({
   shootId: z.string().min(1, "Shoot ID is required"), // Allow editing of shoot ID
   clientId: z.string().min(1, "Client is required"),
+  entityId: z.string().nullable().optional(),
+  siteId: z.string().nullable().optional(),
+  pocId: z.string().nullable().optional(),
   shootTypeId: z.string().min(1, "Shoot type is required"),
-  locationId: z.string().optional(),
-  clusterId: z.string().optional(),
+  locationId: z.string().nullable().optional(),
+  clusterId: z.string().nullable().optional(),
   projectName: z.string().optional(),
   remarks: z.string().optional(),
   editId: z.string().optional(),
@@ -47,7 +52,6 @@ export const updateShootSchema = z.object({
   photographerIds: z.array(z.string()).optional(),
   editorIds: z.array(z.string()).optional(),
   executorId: z.string().optional(), // The person who completed the shoot
-  poc: z.string().optional(), // Point of Contact for the shoot
 });
 
 export const createClusterSchema = z.object({

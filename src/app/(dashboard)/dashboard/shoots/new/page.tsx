@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createShoot, generateShootIdAction, checkShootIdUniqueness } from "@/server/actions/shoot-actions";
-import { getClients } from "@/server/actions/client-actions";
+import { createShoot, generateShootIdAction } from "@/server/actions/shoot-actions";
+import { getClients, getEntitiesByClientForShoot, getSitesByEntityForShoot, getPOCsBySiteForShoot } from "@/server/actions/client-actions";
 import { getShootTypes } from "@/server/actions/shoot-type-actions";
 import { getLocationsByClient } from "@/server/actions/location-actions";
 import { getTeamMembers } from "@/server/actions/user-actions";
@@ -81,6 +81,27 @@ interface Cluster {
   description?: string | null;
 }
 
+interface Entity {
+  id: string;
+  name: string;
+  sites: Site[];
+}
+
+interface Site {
+  id: string;
+  name: string;
+  address?: string | null;
+  pocs: POC[];
+}
+
+interface POC {
+  id: string;
+  name: string;
+  email?: string | null;
+  phone: string;
+  role?: string | null;
+}
+
 export default function CreateShootPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -89,6 +110,9 @@ export default function CreateShootPage() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [clusters, setClusters] = useState<Cluster[]>([]);
+  const [entities, setEntities] = useState<Entity[]>([]);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [pocs, setPocs] = useState<POC[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const router = useRouter();
 
@@ -97,6 +121,9 @@ export default function CreateShootPage() {
     defaultValues: {
       shootId: "",
       clientId: "",
+      entityId: "",
+      siteId: "",
+      pocId: "",
       shootTypeId: "",
       locationId: "",
       clusterId: "",
@@ -115,12 +142,13 @@ export default function CreateShootPage() {
       photographerIds: [],
       editorIds: [],
       executorId: "",
-      poc: "",
     },
   });
 
-  // Watch for client changes to fetch locations
+  // Watch for cascading dropdown changes
   const selectedClientId = form.watch("clientId");
+  const selectedEntityId = form.watch("entityId");
+  const selectedSiteId = form.watch("siteId");
   const selectedWorkflowType = form.watch("workflowType");
 
   // Fetch data on component mount
@@ -155,6 +183,78 @@ export default function CreateShootPage() {
 
     void fetchData();
   }, []);
+
+  // Fetch entities when client changes
+  useEffect(() => {
+    async function fetchClientEntities() {
+      if (selectedClientId) {
+        try {
+          const clientEntities = await getEntitiesByClientForShoot(selectedClientId);
+          setEntities(clientEntities);
+          // Reset entity selection when client changes
+          form.setValue("entityId", "");
+          form.setValue("siteId", "");
+          form.setValue("pocId", "");
+        } catch (error) {
+          console.error("Error fetching client entities:", error);
+        }
+      } else {
+        setEntities([]);
+        setSites([]);
+        setPocs([]);
+        form.setValue("entityId", "");
+        form.setValue("siteId", "");
+        form.setValue("pocId", "");
+      }
+    }
+
+    void fetchClientEntities();
+  }, [selectedClientId, form]);
+
+  // Fetch sites when entity changes
+  useEffect(() => {
+    async function fetchEntitySites() {
+      if (selectedEntityId) {
+        try {
+          const entitySites = await getSitesByEntityForShoot(selectedEntityId);
+          setSites(entitySites);
+          // Reset site selection when entity changes
+          form.setValue("siteId", "");
+          form.setValue("pocId", "");
+        } catch (error) {
+          console.error("Error fetching entity sites:", error);
+        }
+      } else {
+        setSites([]);
+        setPocs([]);
+        form.setValue("siteId", "");
+        form.setValue("pocId", "");
+      }
+    }
+
+    void fetchEntitySites();
+  }, [selectedEntityId, form]);
+
+  // Fetch POCs when site changes
+  useEffect(() => {
+    async function fetchSitePOCs() {
+      if (selectedSiteId) {
+        try {
+          const sitePOCs = await getPOCsBySiteForShoot(selectedSiteId);
+          setPocs(sitePOCs);
+          // Reset POC selection when site changes
+          form.setValue("pocId", "");
+        } catch (error) {
+          console.error("Error fetching site POCs:", error);
+        }
+      } else {
+        setPocs([]);
+        form.setValue("pocId", "");
+      }
+    }
+
+    void fetchSitePOCs();
+  }, [selectedSiteId, form]);
 
   // Fetch locations when client changes
   useEffect(() => {
@@ -194,6 +294,9 @@ export default function CreateShootPage() {
       const formData = new FormData();
       formData.append("shootId", data.shootId.trim());
       formData.append("clientId", data.clientId);
+      if (data.entityId) formData.append("entityId", data.entityId);
+      if (data.siteId) formData.append("siteId", data.siteId);
+      if (data.pocId) formData.append("pocId", data.pocId);
       formData.append("shootTypeId", data.shootTypeId);
       if (data.locationId) formData.append("locationId", data.locationId);
       if (data.clusterId) formData.append("clusterId", data.clusterId);
@@ -233,19 +336,14 @@ export default function CreateShootPage() {
         formData.append("executorId", data.executorId);
       }
 
-      // Add POC
-      if (data.poc) {
-        formData.append("poc", data.poc);
-      }
-
       const result = await createShoot(formData);
       
       if (result.success) {
         toast.success("Shoot created successfully!");
         router.push("/dashboard/shoots");
       } else {
-        toast.error(result.error || "Failed to create shoot");
-        setError(result.error || "Failed to create shoot");
+        toast.error(result.error ?? "Failed to create shoot");
+        setError(result.error ?? "Failed to create shoot");
       }
     } catch (error) {
       console.error("Error creating shoot:", error);
@@ -330,6 +428,160 @@ export default function CreateShootPage() {
 
                   <FormField
                     control={form.control}
+                    name="entityId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Entity</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={!selectedClientId}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue
+                                placeholder={
+                                  !selectedClientId
+                                    ? "Select a client first"
+                                    : entities.length === 0
+                                      ? "No entities found for this client"
+                                      : "Select an entity"
+                                }
+                              />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {entities.length === 0 && selectedClientId ? (
+                              <div className="text-muted-foreground px-2 py-1 text-sm">
+                                No entities found. Add entities for this client first.
+                              </div>
+                            ) : (
+                              entities.map((entity) => (
+                                <SelectItem key={entity.id} value={entity.id}>
+                                  {entity.name}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                        {!selectedClientId && (
+                          <p className="text-muted-foreground text-xs">
+                            Please select a client to see available entities
+                          </p>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="siteId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Site</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={!selectedEntityId}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue
+                                placeholder={
+                                  !selectedEntityId
+                                    ? "Select an entity first"
+                                    : sites.length === 0
+                                      ? "No sites found for this entity"
+                                      : "Select a site"
+                                }
+                              />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {sites.length === 0 && selectedEntityId ? (
+                              <div className="text-muted-foreground px-2 py-1 text-sm">
+                                No sites found. Add sites for this entity first.
+                              </div>
+                            ) : (
+                              sites.map((site) => (
+                                <SelectItem key={site.id} value={site.id}>
+                                  {site.name}
+                                  {site.address && (
+                                    <span className="text-muted-foreground text-xs">
+                                      {" "}({site.address})
+                                    </span>
+                                  )}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                        {!selectedEntityId && (
+                          <p className="text-muted-foreground text-xs">
+                            Please select an entity to see available sites
+                          </p>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="pocId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Point of Contact (POC)</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={!selectedSiteId}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue
+                                placeholder={
+                                  !selectedSiteId
+                                    ? "Select a site first"
+                                    : pocs.length === 0
+                                      ? "No POCs found for this site"
+                                      : "Select a POC"
+                                }
+                              />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {pocs.length === 0 && selectedSiteId ? (
+                              <div className="text-muted-foreground px-2 py-1 text-sm">
+                                No POCs found. Add POCs for this site first.
+                              </div>
+                            ) : (
+                              pocs.map((poc) => (
+                                <SelectItem key={poc.id} value={poc.id}>
+                                  {poc.name}
+                                  {poc.role && (
+                                    <span className="text-muted-foreground text-xs">
+                                      {" "}({poc.role})
+                                    </span>
+                                  )}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                        {!selectedSiteId && (
+                          <p className="text-muted-foreground text-xs">
+                            Please select a site to see available POCs
+                          </p>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="shootTypeId"
                     render={({ field }) => (
                       <FormItem>
@@ -384,7 +636,7 @@ export default function CreateShootPage() {
                                   form.setValue("shootId", result.shootId);
                                   toast.success("Shoot ID generated successfully!");
                                 } else {
-                                  toast.error(result.error || "Failed to generate Shoot ID");
+                                  toast.error(result.error ?? "Failed to generate Shoot ID");
                                 }
                               } catch (error) {
                                 console.error("Error generating Shoot ID:", error);
@@ -563,25 +815,6 @@ export default function CreateShootPage() {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="poc"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Point of Contact (POC)</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter point of contact name"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          The main contact person for this shoot
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
                   <FormField
                     control={form.control}

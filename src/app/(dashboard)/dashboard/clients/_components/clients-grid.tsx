@@ -28,7 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Edit, MapPin, Phone, Mail, MoreHorizontal } from "lucide-react";
+import { Edit, MapPin, Building, MoreHorizontal, Eye } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 
@@ -38,8 +38,22 @@ interface Client {
   email?: string | null;
   phone?: string | null;
   address?: string | null;
+  poc?: string | null;
   createdAt: Date;
+  entities?: Array<{
+    id: string;
+    name: string;
+    sites?: Array<{
+      id: string;
+      name: string;
+      pocs?: Array<{ id: string; name: string }>;
+    }>;
+  }>;
   locations?: Array<{ id: string }>;
+  _count?: {
+    shoots: number;
+    entities: number;
+  };
 }
 
 interface ClientsGridProps {
@@ -88,7 +102,10 @@ export function ClientsGrid({ clients }: ClientsGridProps) {
                   <CardTitle className="text-lg">{client.name}</CardTitle>
                   <CardDescription className="mt-1 flex items-center gap-2">
                     <Badge variant="secondary">
-                      {client.locations?.length ?? 0} locations
+                      {client._count?.entities ?? 0} entities
+                    </Badge>
+                    <Badge variant="outline">
+                      {client._count?.shoots ?? 0} shoots
                     </Badge>
                   </CardDescription>
                 </div>
@@ -100,13 +117,25 @@ export function ClientsGrid({ clients }: ClientsGridProps) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
+                      <Link href={`/dashboard/clients/${client.id}`}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Details
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
                       <Link href={`/dashboard/clients/${client.id}/edit`}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href={`/dashboard/clients/${client.id}/locations`}>
+                      <Link href={`/dashboard/clients/${client.id}?tab=entities`}>
+                        <Building className="mr-2 h-4 w-4" />
+                        Manage Entities
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/dashboard/clients/${client.id}?tab=locations`}>
                         <MapPin className="mr-2 h-4 w-4" />
                         Manage Locations
                       </Link>
@@ -124,24 +153,27 @@ export function ClientsGrid({ clients }: ClientsGridProps) {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              {client.email && (
-                <div className="flex items-center space-x-2 text-sm">
-                  <Mail className="text-muted-foreground h-4 w-4" />
-                  <span className="text-muted-foreground">{client.email}</span>
-                </div>
-              )}
-              {client.phone && (
-                <div className="flex items-center space-x-2 text-sm">
-                  <Phone className="text-muted-foreground h-4 w-4" />
-                  <span className="text-muted-foreground">{client.phone}</span>
-                </div>
-              )}
-              {client.address && (
-                <div className="flex items-center space-x-2 text-sm">
-                  <MapPin className="text-muted-foreground h-4 w-4" />
-                  <span className="text-muted-foreground">
-                    {client.address}
-                  </span>
+              {client.entities && client.entities.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2 text-sm">
+                    <Building className="text-muted-foreground h-4 w-4" />
+                    <span className="text-muted-foreground">
+                      {client.entities.length} entities
+                    </span>
+                  </div>
+                  {client.entities.slice(0, 2).map((entity) => (
+                    <div key={entity.id} className="ml-6 text-xs text-muted-foreground">
+                      • {entity.name}
+                      {entity.sites && entity.sites.length > 0 && (
+                        <span className="ml-2">({entity.sites.length} sites)</span>
+                      )}
+                    </div>
+                  ))}
+                  {client.entities.length > 2 && (
+                    <div className="ml-6 text-xs text-muted-foreground">
+                      +{client.entities.length - 2} more entities
+                    </div>
+                  )}
                 </div>
               )}
               <div className="text-muted-foreground text-xs">

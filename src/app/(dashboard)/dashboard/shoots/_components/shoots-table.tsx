@@ -118,8 +118,8 @@ export function ShootsTable({ shoots, clients }: ShootsTableProps) {
       const matchesSearch =
         !searchQuery ||
         shoot.shootId.toLowerCase().includes(searchLower) ||
-        shoot.projectName?.toLowerCase().includes(searchLower) ||
-        shoot.remarks?.toLowerCase().includes(searchLower);
+        (shoot.projectName?.toLowerCase().includes(searchLower) ?? false) ||
+        (shoot.remarks?.toLowerCase().includes(searchLower) ?? false);
 
       // Client filter
       const matchesClient =

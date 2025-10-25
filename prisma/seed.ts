@@ -8,19 +8,18 @@ async function main() {
 
   // Create admin user
   const hashedPassword = await bcrypt.hash("admin123", 12);
-  const adminUser = await prisma.user.upsert({
-    where: { email: "admin@photography-core.com" },
-    update: {},
-    create: {
-      email: "admin@photography-core.com",
-      name: "Admin User",
-      password: hashedPassword,
-      roles: ["admin"],
-      isActive: true,
-    },
-  });
-
-  console.log("✅ Created admin user:", adminUser.email);
+  try {
+    const adminUser = await prisma.user.create({
+      data: {
+        email: "admin@photography-core.com",
+        name: "Admin User",
+        password: hashedPassword,
+      },
+    });
+    console.log("✅ Created admin user:", adminUser.email);
+  } catch (error) {
+    console.log("Admin user already exists, skipping...");
+  }
 
   // Create shoot types
   const shootTypes = [
@@ -45,99 +44,214 @@ async function main() {
 
   console.log("✅ Created shoot types");
 
-  // Create sample clients
+  // Create sample clients (trade names only)
   const clients = [
-    { name: "John Doe", email: "john@example.com", phone: "+1-555-0123" },
-    { name: "Jane Smith", email: "jane@example.com", phone: "+1-555-0124" },
-    {
-      name: "ABC Real Estate",
-      email: "contact@abcrealestate.com",
-      phone: "+1-555-0125",
-    },
-    { name: "XYZ Events", email: "info@xyzevents.com", phone: "+1-555-0126" },
+    { name: "John Doe Photography" },
+    { name: "Jane Smith Studios" },
+    { name: "ABC Real Estate" },
+    { name: "XYZ Events" },
   ];
 
   for (const client of clients) {
-    await prisma.client.upsert({
-      where: { email: client.email },
-      update: {},
-      create: client,
-    });
+    try {
+      await prisma.client.create({
+        data: client,
+      });
+    } catch (error) {
+      // Client already exists, skip
+      console.log(`Client ${client.name} already exists, skipping...`);
+    }
   }
 
   console.log("✅ Created sample clients");
 
-  // Get created clients to assign locations to them
+  // Get created clients to assign entities, sites, and POCs
   const createdClients = await prisma.client.findMany();
 
-  // Create sample locations for specific clients
-  const locationData = [
+  // Create entities for clients
+  const entityData = [
     {
-      name: "Downtown Studio",
-      address: "123 Main St",
-      city: "New York",
-      state: "NY",
-      country: "USA",
-      clientEmail: "john@example.com", // Link to John Doe
+      name: "John Doe Photography LLC",
+      clientName: "John Doe Photography",
     },
     {
-      name: "Outdoor Garden",
-      address: "456 Park Ave",
-      city: "New York",
-      state: "NY",
-      country: "USA",
-      clientEmail: "john@example.com", // Link to John Doe
+      name: "Jane Smith Studios Inc",
+      clientName: "Jane Smith Studios",
     },
     {
-      name: "Corporate Office",
-      address: "789 Business Blvd",
-      city: "New York",
-      state: "NY",
-      country: "USA",
-      clientEmail: "jane@example.com", // Link to Jane Smith
+      name: "ABC Real Estate Group",
+      clientName: "ABC Real Estate",
     },
     {
-      name: "Main Office",
-      address: "100 Corporate Dr",
-      city: "New York",
-      state: "NY",
-      country: "USA",
-      clientEmail: "contact@abcrealestate.com", // Link to ABC Real Estate
+      name: "ABC Real Estate Holdings",
+      clientName: "ABC Real Estate",
     },
     {
-      name: "Event Hall",
-      address: "321 Event St",
-      city: "New York",
-      state: "NY",
-      country: "USA",
-      clientEmail: "info@xyzevents.com", // Link to XYZ Events
+      name: "XYZ Events Corporation",
+      clientName: "XYZ Events",
     },
   ];
 
-  for (const location of locationData) {
-    const client = createdClients.find((c) => c.email === location.clientEmail);
+  for (const entity of entityData) {
+    const client = createdClients.find((c) => c.name === entity.clientName);
     if (client) {
-      await prisma.location.upsert({
-        where: {
-          name_clientId: {
-            name: location.name,
+      try {
+        await prisma.entity.create({
+          data: {
+            name: entity.name,
             clientId: client.id,
           },
-        },
-        update: {},
-        create: {
-          name: location.name,
-          address: location.address,
-          city: location.city,
-          state: location.state,
-          country: location.country,
-          clientId: client.id,
-        },
-      });
+        });
+      } catch (error) {
+        // Entity already exists, skip
+        console.log(`Entity ${entity.name} already exists, skipping...`);
+      }
     }
   }
 
-  console.log("✅ Created sample locations for clients");
+  console.log("✅ Created sample entities for clients");
+
+  // Get created entities to assign sites
+  const createdEntities = await prisma.entity.findMany();
+
+  // Create sites for entities
+  const siteData = [
+    {
+      name: "Downtown Studio",
+      address: "123 Main St, New York, NY 10001",
+      entityName: "John Doe Photography LLC",
+    },
+    {
+      name: "Outdoor Garden Studio",
+      address: "456 Park Ave, New York, NY 10002",
+      entityName: "John Doe Photography LLC",
+    },
+    {
+      name: "Corporate Office",
+      address: "789 Business Blvd, New York, NY 10003",
+      entityName: "Jane Smith Studios Inc",
+    },
+    {
+      name: "Main Office",
+      address: "100 Corporate Dr, New York, NY 10004",
+      entityName: "ABC Real Estate Group",
+    },
+    {
+      name: "Secondary Office",
+      address: "200 Business Ave, New York, NY 10005",
+      entityName: "ABC Real Estate Holdings",
+    },
+    {
+      name: "Event Hall",
+      address: "321 Event St, New York, NY 10006",
+      entityName: "XYZ Events Corporation",
+    },
+  ];
+
+  for (const site of siteData) {
+    const entity = createdEntities.find((e) => e.name === site.entityName);
+    if (entity) {
+      try {
+        await prisma.site.create({
+          data: {
+            name: site.name,
+            address: site.address,
+            entityId: entity.id,
+          },
+        });
+      } catch (error) {
+        // Site already exists, skip
+        console.log(`Site ${site.name} already exists, skipping...`);
+      }
+    }
+  }
+
+  console.log("✅ Created sample sites for entities");
+
+  // Get created sites to assign POCs
+  const createdSites = await prisma.site.findMany();
+
+  // Create POCs for sites
+  const pocData = [
+    {
+      name: "John Doe",
+      email: "john@johndoephotography.com",
+      phone: "+1-555-0123",
+      role: "Owner",
+      siteName: "Downtown Studio",
+    },
+    {
+      name: "Sarah Johnson",
+      email: "sarah@johndoephotography.com",
+      phone: "+1-555-0124",
+      role: "Studio Manager",
+      siteName: "Downtown Studio",
+    },
+    {
+      name: "Mike Wilson",
+      email: "mike@johndoephotography.com",
+      phone: "+1-555-0125",
+      role: "Photographer",
+      siteName: "Outdoor Garden Studio",
+    },
+    {
+      name: "Jane Smith",
+      email: "jane@janesmithstudios.com",
+      phone: "+1-555-0126",
+      role: "Creative Director",
+      siteName: "Corporate Office",
+    },
+    {
+      name: "Robert Brown",
+      email: "robert@abcrealestate.com",
+      phone: "+1-555-0127",
+      role: "Property Manager",
+      siteName: "Main Office",
+    },
+    {
+      name: "Lisa Davis",
+      email: "lisa@abcrealestate.com",
+      phone: "+1-555-0128",
+      role: "Sales Director",
+      siteName: "Secondary Office",
+    },
+    {
+      name: "Tom Anderson",
+      email: "tom@xyzevents.com",
+      phone: "+1-555-0129",
+      role: "Event Coordinator",
+      siteName: "Event Hall",
+    },
+    {
+      name: "Emma Wilson",
+      email: "emma@xyzevents.com",
+      phone: "+1-555-0130",
+      role: "Operations Manager",
+      siteName: "Event Hall",
+    },
+  ];
+
+  for (const poc of pocData) {
+    const site = createdSites.find((s) => s.name === poc.siteName);
+    if (site) {
+      try {
+        await prisma.pOC.create({
+          data: {
+            name: poc.name,
+            email: poc.email,
+            phone: poc.phone,
+            role: poc.role,
+            siteId: site.id,
+          },
+        });
+      } catch (error) {
+        // POC already exists, skip
+        console.log(`POC ${poc.name} already exists, skipping...`);
+      }
+    }
+  }
+
+  console.log("✅ Created sample POCs for sites");
 
   // Create team members with different role combinations
   const teamMemberPassword = await bcrypt.hash("team123", 12);
@@ -213,20 +327,17 @@ async function main() {
   ];
 
   for (const member of teamMembers) {
-    await prisma.user.upsert({
-      where: { email: member.email },
-      update: {},
-      create: {
-        name: member.name,
-        email: member.email,
-        phone: member.phone,
-        password: teamMemberPassword,
-        roles: member.roles,
-        specialties: member.specialties,
-        rating: member.rating,
-        isActive: true,
-      },
-    });
+    try {
+      await prisma.user.create({
+        data: {
+          name: member.name,
+          email: member.email,
+          password: teamMemberPassword,
+        },
+      });
+    } catch (error) {
+      console.log(`Team member ${member.name} already exists, skipping...`);
+    }
   }
 
   console.log(

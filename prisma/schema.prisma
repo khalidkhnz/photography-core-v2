@@ -18,18 +18,69 @@ datasource db {
 
 model Client {
   id        String   @id @default(cuid())
-  name      String
-  email     String?  @unique
-  phone     String?
-  address   String?  // Client's main address
-  poc       String?  // Point of Contact name
+  name      String   // Trade name (e.g., ATS HomeKraft)
+  email     String?  // Client email
+  phone     String?  // Client phone
+  address   String?  // Client address
+  poc       String?  // Point of Contact
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  entities  Entity[]
   locations Location[]
   shoots    Shoot[]
 
   @@index([name])
+  @@index([email])
+}
+
+model Entity {
+  id        String   @id @default(cuid())
+  name      String   // Billing entity name
+  clientId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client    Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  sites     Site[]
+  shoots    Shoot[]
+
+  @@index([name])
+  @@index([clientId])
+}
+
+model Site {
+  id        String   @id @default(cuid())
+  name      String   // Site name/location
+  address   String?  // Site address
+  entityId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  entity    Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  pocs      POC[]
+  locations Location[]
+  shoots    Shoot[]
+
+  @@index([name])
+  @@index([entityId])
+}
+
+model POC {
+  id        String   @id @default(cuid())
+  name      String   // POC name
+  email     String?  // POC email
+  phone     String   // POC phone (compulsory)
+  role      String?  // POC role/title
+  siteId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site      Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  shoots    Shoot[]
+
+  @@index([name])
+  @@index([siteId])
 }
 
 model ShootType {
@@ -54,14 +105,16 @@ model Location {
   state       String?
   country     String?
   coordinates String? // For storing lat/lng
-  clientId    String? // Link to client (optional for backward compatibility)
+  siteId      String? // Link to site
+  clientId    String? // Link to client (for backward compatibility)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  site        Site?    @relation(fields: [siteId], references: [id], onDelete: Cascade)
   client      Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
   shoots      Shoot[]
 
-  @@unique([name, clientId]) // Unique name per client
+  @@unique([name, siteId]) // Unique name per site
   @@index([city])
   @@index([clientId])
 }
@@ -87,6 +140,9 @@ model Shoot {
     id                    String   @id @default(cuid())
     shootId               String   @unique // Custom shoot ID (e.g., RE-2024-001), editable by admin
     clientId              String
+    entityId              String?  // Link to specific entity
+    siteId                String?  // Link to specific site
+    pocId                 String?  // Link to specific POC
     shootTypeId           String
     locationId            String?
     clusterId             String?  // Link to cluster for cluster-basis workflow
@@ -105,12 +161,15 @@ model Shoot {
     travelCost            Float?   // Travel cost (separate from photography)
     editingCost           Float?   // Editing cost
     executorId            String?  // The person who completed the shoot (from selected team members)
-    poc                   String?  // Point of Contact for the shoot
+    poc                   String?  // Point of Contact for the shoot (legacy field, use pocId instead)
     status                String   @default("planned") // planned, in_progress, editing, delivered, completed, blocked, postponed, cancelled
     createdAt             DateTime @default(now())
     updatedAt             DateTime @updatedAt
 
     client                Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+    entity                Entity?  @relation(fields: [entityId], references: [id], onDelete: SetNull)
+    site                  Site?    @relation(fields: [siteId], references: [id], onDelete: SetNull)
+    pocContact            POC?     @relation(fields: [pocId], references: [id], onDelete: SetNull)
     shootType             ShootType @relation(fields: [shootTypeId], references: [id])
     location              Location? @relation(fields: [locationId], references: [id])
     cluster               Cluster? @relation(fields: [clusterId], references: [id], onDelete: SetNull)
@@ -120,6 +179,9 @@ model Shoot {
 
     @@index([shootId])
     @@index([clientId])
+    @@index([entityId])
+    @@index([siteId])
+    @@index([pocId])
     @@index([shootTypeId])
     @@index([executorId])
     @@index([status])

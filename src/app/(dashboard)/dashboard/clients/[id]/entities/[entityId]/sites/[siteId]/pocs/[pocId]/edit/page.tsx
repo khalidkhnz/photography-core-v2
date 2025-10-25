@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createClient } from "@/server/actions/client-actions";
+import { updatePOC } from "@/server/actions/client-actions";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -29,50 +28,53 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
-const createClientSchema = z.object({
-  name: z.string().min(1, "Client name is required"),
-  email: z.string().email("Invalid email address").optional().or(z.literal("")),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  poc: z.string().optional(),
+const updatePOCSchema = z.object({
+  name: z.string().min(1, "POC name is required"),
+  email: z.string().email().optional().or(z.literal("")),
+  phone: z.string().min(1, "Phone is required"),
+  role: z.string().optional(),
 });
 
-type CreateClientFormData = z.infer<typeof createClientSchema>;
+type UpdatePOCFormData = z.infer<typeof updatePOCSchema>;
 
-export default function CreateClientPage() {
+export default function EditPOCPage() {
+  const params = useParams();
+  const id = params.id as string;
+  const entityId = params.entityId as string;
+  const siteId = params.siteId as string;
+  const pocId = params.pocId as string;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const form = useForm<CreateClientFormData>({
-    resolver: zodResolver(createClientSchema),
+  const form = useForm<UpdatePOCFormData>({
+    resolver: zodResolver(updatePOCSchema),
     defaultValues: {
       name: "",
       email: "",
       phone: "",
-      address: "",
-      poc: "",
+      role: "",
     },
   });
 
-  const onSubmit = async (data: CreateClientFormData) => {
+  const onSubmit = async (data: UpdatePOCFormData) => {
     setIsLoading(true);
     setError("");
 
     try {
-      // Convert the form data to FormData for the server action
       const formData = new FormData();
       formData.append("name", data.name);
-      if (data.email) formData.append("email", data.email);
-      if (data.phone) formData.append("phone", data.phone);
-      if (data.address) formData.append("address", data.address);
-      if (data.poc) formData.append("poc", data.poc);
+      formData.append("email", data.email ?? "");
+      formData.append("phone", data.phone);
+      formData.append("role", data.role ?? "");
 
-      await createClient(formData);
-      toast.success("Client created successfully!");
-      router.push("/dashboard/clients");
+      await updatePOC(pocId, formData);
+      toast.success("POC updated successfully!");
+      router.push(`/dashboard/clients/${id}/entities/${entityId}/sites/${siteId}`);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to create client";
+      console.error("Error updating POC:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update POC";
       toast.error(errorMessage);
       setError(errorMessage);
     } finally {
@@ -84,14 +86,14 @@ export default function CreateClientPage() {
     <div className="space-y-6">
       <div className="flex items-center space-x-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/dashboard/clients">
+          <Link href={`/dashboard/clients/${id}/entities/${entityId}/sites/${siteId}`}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Add New Client</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Edit POC</h1>
           <p className="text-muted-foreground">
-            Create a new client for your photography business
+            Update point of contact information
           </p>
         </div>
       </div>
@@ -106,8 +108,10 @@ export default function CreateClientPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-              <CardDescription>Basic details about the client</CardDescription>
+              <CardTitle>POC Information</CardTitle>
+              <CardDescription>
+                Update the point of contact details
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <FormField
@@ -115,7 +119,7 @@ export default function CreateClientPage() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Client Name *</FormLabel>
+                    <FormLabel>POC Name *</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g., John Doe" {...field} />
                     </FormControl>
@@ -131,11 +135,7 @@ export default function CreateClientPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="e.g., john@example.com"
-                        {...field}
-                      />
+                      <Input type="email" placeholder="john@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -147,9 +147,9 @@ export default function CreateClientPage() {
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone</FormLabel>
+                    <FormLabel>Phone *</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., +1-555-0123" {...field} />
+                      <Input placeholder="+1 (555) 123-4567" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -158,29 +158,12 @@ export default function CreateClientPage() {
 
               <FormField
                 control={form.control}
-                name="address"
+                name="role"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Address</FormLabel>
+                    <FormLabel>Role/Title</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="e.g., 123 Main St, City, State"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="poc"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Point of Contact</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Jane Smith" {...field} />
+                      <Input placeholder="e.g., Project Manager, Site Supervisor" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -191,10 +174,12 @@ export default function CreateClientPage() {
 
           <div className="flex justify-end space-x-4">
             <Button variant="outline" asChild>
-              <Link href="/dashboard/clients">Cancel</Link>
+              <Link href={`/dashboard/clients/${id}/entities/${entityId}/sites/${siteId}`}>
+                Cancel
+              </Link>
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Creating..." : "Create Client"}
+              {isLoading ? "Updating..." : "Update POC"}
             </Button>
           </div>
         </form>

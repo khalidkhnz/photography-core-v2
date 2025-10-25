@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { updateShoot } from "@/server/actions/shoot-actions";
 import { getShootById } from "@/server/actions/shoot-actions";
-import { getClients } from "@/server/actions/client-actions";
+import { getClients, getEntitiesByClientForShoot, getSitesByEntityForShoot, getPOCsBySiteForShoot } from "@/server/actions/client-actions";
 import { getShootTypes } from "@/server/actions/shoot-type-actions";
 import { getLocationsByClient } from "@/server/actions/location-actions";
 import { getTeamMembers } from "@/server/actions/user-actions";
@@ -65,6 +65,30 @@ interface Location {
   address?: string | null;
 }
 
+interface Entity {
+  id: string;
+  name: string;
+  clientId: string;
+  sites: Site[];
+}
+
+interface Site {
+  id: string;
+  name: string;
+  address?: string | null;
+  entityId: string;
+  pocs: POC[];
+}
+
+interface POC {
+  id: string;
+  name: string;
+  email?: string | null;
+  phone: string;
+  role?: string | null;
+  siteId: string;
+}
+
 interface TeamMember {
   id: string;
   name: string | null;
@@ -85,6 +109,9 @@ interface Cluster {
 interface ExtendedShoot {
   shootId: string;
   clientId: string;
+  entityId?: string | null;
+  siteId?: string | null;
+  pocId?: string | null;
   shootTypeId: string;
   locationId: string | null;
   clusterId?: string | null;
@@ -101,7 +128,6 @@ interface ExtendedShoot {
   travelCost?: number | null;
   editingCost?: number | null;
   executorId?: string | null;
-  poc?: string | null;
   teamMembers: Array<{ userId: string; assignmentType: string }>;
 }
 
@@ -117,6 +143,9 @@ export default function EditShootPage({ params }: PageProps) {
   const [locations, setLocations] = useState<Location[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [clusters, setClusters] = useState<Cluster[]>([]);
+  const [entities, setEntities] = useState<Entity[]>([]);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [pocs, setPocs] = useState<POC[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [shootId, setShootId] = useState<string>("");
   const router = useRouter();
@@ -126,6 +155,9 @@ export default function EditShootPage({ params }: PageProps) {
     defaultValues: {
       shootId: "",
       clientId: "",
+      entityId: "",
+      siteId: "",
+      pocId: "",
       shootTypeId: "",
       locationId: "",
       clusterId: "",
@@ -144,12 +176,13 @@ export default function EditShootPage({ params }: PageProps) {
       photographerIds: [],
       editorIds: [],
       executorId: "",
-      poc: "",
     },
   });
 
   // Watch for client changes to fetch locations
   const selectedClientId = form.watch("clientId");
+  const selectedEntityId = form.watch("entityId");
+  const selectedSiteId = form.watch("siteId");
   const selectedWorkflowType = form.watch("workflowType");
 
   // Fetch data on component mount
@@ -190,6 +223,9 @@ export default function EditShootPage({ params }: PageProps) {
         // Set form values
         form.setValue("shootId", extendedShootData.shootId);
         form.setValue("clientId", extendedShootData.clientId);
+        form.setValue("entityId", extendedShootData.entityId ?? "");
+        form.setValue("siteId", extendedShootData.siteId ?? "");
+        form.setValue("pocId", extendedShootData.pocId ?? "");
         form.setValue("shootTypeId", extendedShootData.shootTypeId);
         form.setValue("locationId", extendedShootData.locationId ?? "");
         form.setValue("clusterId", extendedShootData.clusterId ?? "");
@@ -251,7 +287,6 @@ export default function EditShootPage({ params }: PageProps) {
             .map((tm) => tm.userId),
         );
         form.setValue("executorId", extendedShootData.executorId ?? "");
-        form.setValue("poc", extendedShootData.poc ?? "");
 
         // Fetch locations for the client
         if (shootData.clientId) {
@@ -259,6 +294,24 @@ export default function EditShootPage({ params }: PageProps) {
             shootData.clientId,
           );
           setLocations(clientLocations);
+        }
+
+        // Fetch entities for the client
+        if (extendedShootData.clientId) {
+          const clientEntities = await getEntitiesByClientForShoot(extendedShootData.clientId);
+          setEntities(clientEntities);
+        }
+
+        // Fetch sites for the entity
+        if (extendedShootData.entityId) {
+          const entitySites = await getSitesByEntityForShoot(extendedShootData.entityId);
+          setSites(entitySites);
+        }
+
+        // Fetch POCs for the site
+        if (extendedShootData.siteId) {
+          const sitePOCs = await getPOCsBySiteForShoot(extendedShootData.siteId);
+          setPocs(sitePOCs);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -297,6 +350,72 @@ export default function EditShootPage({ params }: PageProps) {
     void fetchClientLocations();
   }, [selectedClientId, form]);
 
+  // Fetch entities when client changes
+  useEffect(() => {
+    async function fetchClientEntities() {
+      if (selectedClientId) {
+        try {
+          const clientEntities = await getEntitiesByClientForShoot(selectedClientId);
+          setEntities(clientEntities);
+          form.setValue("entityId", "");
+          form.setValue("siteId", "");
+          form.setValue("pocId", "");
+        } catch (error) {
+          console.error("Error fetching client entities:", error);
+        }
+      } else {
+        setEntities([]);
+        setSites([]);
+        setPocs([]);
+        form.setValue("entityId", "");
+        form.setValue("siteId", "");
+        form.setValue("pocId", "");
+      }
+    }
+    void fetchClientEntities();
+  }, [selectedClientId, form]);
+
+  // Fetch sites when entity changes
+  useEffect(() => {
+    async function fetchEntitySites() {
+      if (selectedEntityId) {
+        try {
+          const entitySites = await getSitesByEntityForShoot(selectedEntityId);
+          setSites(entitySites);
+          form.setValue("siteId", "");
+          form.setValue("pocId", "");
+        } catch (error) {
+          console.error("Error fetching entity sites:", error);
+        }
+      } else {
+        setSites([]);
+        setPocs([]);
+        form.setValue("siteId", "");
+        form.setValue("pocId", "");
+      }
+    }
+    void fetchEntitySites();
+  }, [selectedEntityId, form]);
+
+  // Fetch POCs when site changes
+  useEffect(() => {
+    async function fetchSitePOCs() {
+      if (selectedSiteId) {
+        try {
+          const sitePOCs = await getPOCsBySiteForShoot(selectedSiteId);
+          setPocs(sitePOCs);
+          form.setValue("pocId", "");
+        } catch (error) {
+          console.error("Error fetching site POCs:", error);
+        }
+      } else {
+        setPocs([]);
+        form.setValue("pocId", "");
+      }
+    }
+    void fetchSitePOCs();
+  }, [selectedSiteId, form]);
+
   const onSubmit = async (data: UpdateShootFormData) => {
     setIsLoading(true);
     setError("");
@@ -306,6 +425,9 @@ export default function EditShootPage({ params }: PageProps) {
       const formData = new FormData();
       formData.append("shootId", data.shootId);
       formData.append("clientId", data.clientId);
+      if (data.entityId) formData.append("entityId", data.entityId);
+      if (data.siteId) formData.append("siteId", data.siteId);
+      if (data.pocId) formData.append("pocId", data.pocId);
       formData.append("shootTypeId", data.shootTypeId);
       if (data.locationId) formData.append("locationId", data.locationId);
       if (data.clusterId) formData.append("clusterId", data.clusterId);
@@ -345,10 +467,6 @@ export default function EditShootPage({ params }: PageProps) {
         formData.append("executorId", data.executorId);
       }
 
-      // Add POC
-      if (data.poc) {
-        formData.append("poc", data.poc);
-      }
 
       await updateShoot(shootId, formData);
       void router.push(`/dashboard/shoots/${shootId}`);
@@ -450,13 +568,157 @@ export default function EditShootPage({ params }: PageProps) {
 
                 <FormField
                   control={form.control}
+                  name="entityId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Entity</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value ?? ""}
+                        disabled={!selectedClientId}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={
+                                !selectedClientId
+                                  ? "Select a client first"
+                                  : entities.length === 0
+                                    ? "No entities found for this client"
+                                    : "Select an entity"
+                              }
+                            />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {entities.length === 0 && selectedClientId ? (
+                            <div className="text-muted-foreground px-2 py-1 text-sm">
+                              No entities found. Add entities for this client first.
+                            </div>
+                          ) : (
+                            entities.map((entity) => (
+                              <SelectItem key={entity.id} value={entity.id}>
+                                {entity.name}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {!selectedClientId && (
+                        <p className="text-muted-foreground text-xs">
+                          Please select a client to see available entities
+                        </p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="siteId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Site</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value ?? ""}
+                        disabled={!selectedEntityId}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={
+                                !selectedEntityId
+                                  ? "Select an entity first"
+                                  : sites.length === 0
+                                    ? "No sites found for this entity"
+                                    : "Select a site"
+                              }
+                            />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {sites.length === 0 && selectedEntityId ? (
+                            <div className="text-muted-foreground px-2 py-1 text-sm">
+                              No sites found. Add sites for this entity first.
+                            </div>
+                          ) : (
+                            sites.map((site) => (
+                              <SelectItem key={site.id} value={site.id}>
+                                {site.name}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {!selectedEntityId && (
+                        <p className="text-muted-foreground text-xs">
+                          Please select an entity to see available sites
+                        </p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="pocId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Point of Contact</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value ?? ""}
+                        disabled={!selectedSiteId}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={
+                                !selectedSiteId
+                                  ? "Select a site first"
+                                  : pocs.length === 0
+                                    ? "No POCs found for this site"
+                                    : "Select a POC"
+                              }
+                            />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {pocs.length === 0 && selectedSiteId ? (
+                            <div className="text-muted-foreground px-2 py-1 text-sm">
+                              No POCs found. Add POCs for this site first.
+                            </div>
+                          ) : (
+                            pocs.map((poc) => (
+                              <SelectItem key={poc.id} value={poc.id}>
+                                {poc.name}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {!selectedSiteId && (
+                        <p className="text-muted-foreground text-xs">
+                          Please select a site to see available POCs
+                        </p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="shootTypeId"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Shoot Type *</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        defaultValue={field.value ?? ""}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -484,7 +746,7 @@ export default function EditShootPage({ params }: PageProps) {
                       <FormLabel>Workflow Type *</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        defaultValue={field.value ?? ""}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -520,7 +782,7 @@ export default function EditShootPage({ params }: PageProps) {
                         <FormLabel>Cluster</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          value={field.value}
+                          value={field.value ?? ""}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -558,7 +820,7 @@ export default function EditShootPage({ params }: PageProps) {
                       <FormLabel>Location</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        defaultValue={field.value ?? ""}
                         disabled={!selectedClientId}
                       >
                         <FormControl>
@@ -630,25 +892,6 @@ export default function EditShootPage({ params }: PageProps) {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="poc"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Point of Contact (POC)</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter point of contact name"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        The main contact person for this shoot
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 <FormField
                   control={form.control}

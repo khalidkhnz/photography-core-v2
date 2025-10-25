@@ -14,7 +14,10 @@ import {
   LogOut,
   UserCheck,
   Type,
-  Layers,
+  // Building2,
+  // Award,
+  // Tag,
+  // Trophy,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -25,17 +28,13 @@ const navigation = [
     icon: Camera,
   },
   {
-    name: "Clusters",
-    href: "/dashboard/clusters",
-    icon: Layers,
-  },
-  {
     name: "Shoots",
     href: "/dashboard/shoots",
     icon: Calendar,
     children: [
       { name: "All Shoots", href: "/dashboard/shoots" },
       { name: "Create Shoot", href: "/dashboard/shoots/new" },
+      { name: "Clusters", href: "/dashboard/clusters" },
     ],
   },
   {
@@ -53,6 +52,16 @@ const navigation = [
     href: "/dashboard/shoot-types",
     icon: Type,
   },
+  // {
+  //   name: "Studios",
+  //   href: "/dashboard/studios",
+  //   icon: Building2,
+  // },
+  // {
+  //   name: "Expertises",
+  //   href: "/dashboard/expertises",
+  //   icon: Award,
+  // },
   // {
   //   name: "Coupons",
   //   href: "/dashboard/coupons",

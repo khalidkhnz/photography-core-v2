@@ -7,6 +7,9 @@ import { refreshDashboardData } from "./dashboard-actions";
 
 const createShootSchema = z.object({
   clientId: z.string().min(1, "Client is required"),
+  entityId: z.string().optional(),
+  siteId: z.string().optional(),
+  pocId: z.string().optional(),
   shootTypeId: z.string().min(1, "Shoot type is required"),
   locationId: z.string().optional(),
   clusterId: z.string().optional(),
@@ -25,12 +28,15 @@ const createShootSchema = z.object({
   photographerIds: z.array(z.string()).optional(), // Will map to assignmentType: "photographer"
   editorIds: z.array(z.string()).optional(), // Will map to assignmentType: "editor"
   executorId: z.string().optional(), // The person who completed the shoot
-  poc: z.string().optional(), // Point of Contact for the shoot
+  poc: z.string().optional(), // Point of Contact for the shoot (legacy field)
 });
 
 const updateShootSchema = z.object({
   shootId: z.string().min(1, "Shoot ID is required"),
   clientId: z.string().min(1, "Client is required"),
+  entityId: z.string().optional(),
+  siteId: z.string().optional(),
+  pocId: z.string().optional(),
   shootTypeId: z.string().min(1, "Shoot type is required"),
   locationId: z.string().optional(),
   clusterId: z.string().optional(),
@@ -49,7 +55,7 @@ const updateShootSchema = z.object({
   photographerIds: z.array(z.string()).optional(),
   editorIds: z.array(z.string()).optional(),
   executorId: z.string().optional(), // The person who completed the shoot
-  poc: z.string().optional(), // Point of Contact for the shoot
+  poc: z.string().optional(), // Point of Contact for the shoot (legacy field)
 });
 
 // Function to generate unique Shoot ID
@@ -119,6 +125,9 @@ export async function createShoot(formData: FormData) {
     const rawData = {
       shootId: formData.get("shootId") as string,
       clientId: formData.get("clientId") as string,
+      entityId: (formData.get("entityId") as string) || undefined,
+      siteId: (formData.get("siteId") as string) || undefined,
+      pocId: (formData.get("pocId") as string) || undefined,
       shootTypeId: formData.get("shootTypeId") as string,
       locationId: (formData.get("locationId") as string) || undefined,
       clusterId: (formData.get("clusterId") as string) || undefined,
@@ -179,6 +188,9 @@ export async function createShoot(formData: FormData) {
       data: {
         shootId: shootId,
         clientId: validatedData.clientId,
+        entityId: validatedData.entityId,
+        siteId: validatedData.siteId,
+        pocId: validatedData.pocId,
         shootTypeId: validatedData.shootTypeId,
         locationId: validatedData.locationId,
         clusterId: validatedData.clusterId,
@@ -199,7 +211,7 @@ export async function createShoot(formData: FormData) {
         travelCost: travelCostFloat,
         editingCost: editingCostFloat,
         executorId: validatedData.executorId, // Executor who will complete the shoot
-        poc: validatedData.poc, // Point of Contact for the shoot
+        poc: validatedData.poc, // Point of Contact for the shoot (legacy field)
         status: "planned",
       },
     });
@@ -264,6 +276,9 @@ export async function getShoots() {
     const shoots = await db.shoot.findMany({
       include: {
         client: true,
+        entity: true,
+        site: true,
+        pocContact: true,
         shootType: true,
         location: true,
         executor: true,
@@ -293,6 +308,9 @@ export async function updateShoot(id: string, formData: FormData) {
     const rawData = {
       shootId: formData.get("shootId") as string,
       clientId: formData.get("clientId") as string,
+      entityId: (formData.get("entityId") as string) || undefined,
+      siteId: (formData.get("siteId") as string) || undefined,
+      pocId: (formData.get("pocId") as string) || undefined,
       shootTypeId: formData.get("shootTypeId") as string,
       locationId: (formData.get("locationId") as string) || undefined,
       clusterId: (formData.get("clusterId") as string) || undefined,
@@ -352,6 +370,9 @@ export async function updateShoot(id: string, formData: FormData) {
       data: {
         shootId: validatedData.shootId,
         clientId: validatedData.clientId,
+        entityId: validatedData.entityId,
+        siteId: validatedData.siteId,
+        pocId: validatedData.pocId,
         shootTypeId: validatedData.shootTypeId,
         locationId: validatedData.locationId,
         clusterId: validatedData.clusterId,
@@ -474,6 +495,9 @@ export async function getShootById(id: string) {
       where: { id },
       include: {
         client: true,
+        entity: true,
+        site: true,
+        pocContact: true,
         shootType: true,
         location: true,
         cluster: true,

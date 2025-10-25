@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createClient } from "@/server/actions/client-actions";
+import { createPOC } from "@/server/actions/client-actions";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -29,50 +28,53 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
-const createClientSchema = z.object({
-  name: z.string().min(1, "Client name is required"),
+const createPOCSchema = z.object({
+  name: z.string().min(1, "POC name is required"),
   email: z.string().email("Invalid email address").optional().or(z.literal("")),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  poc: z.string().optional(),
+  phone: z.string().min(1, "Phone number is required"),
+  role: z.string().optional(),
 });
 
-type CreateClientFormData = z.infer<typeof createClientSchema>;
+type CreatePOCFormData = z.infer<typeof createPOCSchema>;
 
-export default function CreateClientPage() {
+export default function CreatePOCPage() {
+  const params = useParams();
+  const id = params.id as string;
+  const entityId = params.entityId as string;
+  const siteId = params.siteId as string;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const form = useForm<CreateClientFormData>({
-    resolver: zodResolver(createClientSchema),
+  const form = useForm<CreatePOCFormData>({
+    resolver: zodResolver(createPOCSchema),
     defaultValues: {
       name: "",
       email: "",
       phone: "",
-      address: "",
-      poc: "",
+      role: "",
     },
   });
 
-  const onSubmit = async (data: CreateClientFormData) => {
+  const onSubmit = async (data: CreatePOCFormData) => {
     setIsLoading(true);
     setError("");
 
     try {
-      // Convert the form data to FormData for the server action
       const formData = new FormData();
       formData.append("name", data.name);
       if (data.email) formData.append("email", data.email);
-      if (data.phone) formData.append("phone", data.phone);
-      if (data.address) formData.append("address", data.address);
-      if (data.poc) formData.append("poc", data.poc);
+      formData.append("phone", data.phone);
+      if (data.role) formData.append("role", data.role);
+      formData.append("siteId", siteId);
 
-      await createClient(formData);
-      toast.success("Client created successfully!");
-      router.push("/dashboard/clients");
+      await createPOC(formData);
+      toast.success("POC created successfully!");
+      router.push(`/dashboard/clients/${id}/entities/${entityId}/sites/${siteId}`);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to create client";
+      console.error("Error creating POC:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create POC";
       toast.error(errorMessage);
       setError(errorMessage);
     } finally {
@@ -84,14 +86,14 @@ export default function CreateClientPage() {
     <div className="space-y-6">
       <div className="flex items-center space-x-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/dashboard/clients">
+          <Link href={`/dashboard/clients/${id}/entities/${entityId}/sites/${siteId}/pocs`}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Add New Client</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Add New POC</h1>
           <p className="text-muted-foreground">
-            Create a new client for your photography business
+            Create a new point of contact for this site
           </p>
         </div>
       </div>
@@ -106,8 +108,10 @@ export default function CreateClientPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-              <CardDescription>Basic details about the client</CardDescription>
+              <CardTitle>POC Information</CardTitle>
+              <CardDescription>
+                Enter the contact details for this point of contact
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <FormField
@@ -115,9 +119,23 @@ export default function CreateClientPage() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Client Name *</FormLabel>
+                    <FormLabel>POC Name *</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., John Doe" {...field} />
+                      <Input placeholder="e.g., John Smith" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., +1-555-0123" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -144,43 +162,12 @@ export default function CreateClientPage() {
 
               <FormField
                 control={form.control}
-                name="phone"
+                name="role"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone</FormLabel>
+                    <FormLabel>Role/Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., +1-555-0123" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Address</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="e.g., 123 Main St, City, State"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="poc"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Point of Contact</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Jane Smith" {...field} />
+                      <Input placeholder="e.g., Site Manager, Project Lead" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -191,10 +178,10 @@ export default function CreateClientPage() {
 
           <div className="flex justify-end space-x-4">
             <Button variant="outline" asChild>
-              <Link href="/dashboard/clients">Cancel</Link>
+              <Link href={`/dashboard/clients/${id}/entities/${entityId}/sites/${siteId}/pocs`}>Cancel</Link>
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Creating..." : "Create Client"}
+              {isLoading ? "Creating..." : "Create POC"}
             </Button>
           </div>
         </form>

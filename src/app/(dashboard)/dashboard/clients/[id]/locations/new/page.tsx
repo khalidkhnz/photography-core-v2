@@ -79,7 +79,7 @@ export default function CreateLocationPage({ params }: PageProps) {
       formData.append("clientId", clientId);
 
       await createLocation(formData);
-      void router.push(`/dashboard/clients/${clientId}/locations`);
+      void router.push(`/dashboard/clients/${clientId}?tab=locations`);
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "Failed to create location",
