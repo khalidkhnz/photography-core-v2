@@ -2,13 +2,25 @@
 CREATE TABLE "public"."Client" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "email" TEXT,
-    "phone" TEXT,
     "address" TEXT,
+    "pocName" TEXT,
+    "pocEmail" TEXT,
+    "pocPhone" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Client_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Entity" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "clientId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Entity_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -32,7 +44,7 @@ CREATE TABLE "public"."Location" (
     "state" TEXT,
     "country" TEXT,
     "coordinates" TEXT,
-    "clientId" TEXT,
+    "clientId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -40,33 +52,30 @@ CREATE TABLE "public"."Location" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."Photographer" (
+CREATE TABLE "public"."LocationPOC" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT,
-    "phone" TEXT,
-    "specialties" TEXT[],
-    "rating" DOUBLE PRECISION DEFAULT 0,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "phone" TEXT NOT NULL,
+    "role" TEXT,
+    "locationId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Photographer_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "LocationPOC_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "public"."Editor" (
+CREATE TABLE "public"."Cluster" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "email" TEXT,
-    "phone" TEXT,
-    "specialties" TEXT[],
-    "rating" DOUBLE PRECISION DEFAULT 0,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "description" TEXT,
+    "clientId" TEXT,
+    "totalCost" DOUBLE PRECISION,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Editor_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Cluster_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -74,13 +83,25 @@ CREATE TABLE "public"."Shoot" (
     "id" TEXT NOT NULL,
     "shootId" TEXT NOT NULL,
     "clientId" TEXT NOT NULL,
-    "shootTypeId" TEXT NOT NULL,
+    "entityId" TEXT,
     "locationId" TEXT,
+    "clusterId" TEXT,
+    "shootTypeId" TEXT NOT NULL,
+    "projectName" TEXT,
+    "remarks" TEXT,
     "overallDeliverables" TEXT,
-    "shootStartDate" TIMESTAMP(3),
-    "shootEndDate" TIMESTAMP(3),
+    "scheduledShootDate" TIMESTAMP(3),
+    "reportingTime" TEXT,
+    "wrapUpTime" TEXT,
     "photographerNotes" TEXT,
-    "editorNotes" TEXT,
+    "workflowType" TEXT NOT NULL DEFAULT 'shift',
+    "shootCost" DOUBLE PRECISION,
+    "travelCost" DOUBLE PRECISION,
+    "shootCostStatus" TEXT,
+    "travelCostStatus" TEXT,
+    "overallCost" DOUBLE PRECISION,
+    "overallCostStatus" TEXT,
+    "dopId" TEXT,
     "status" TEXT NOT NULL DEFAULT 'planned',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -89,25 +110,40 @@ CREATE TABLE "public"."Shoot" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."ShootPhotographer" (
+CREATE TABLE "public"."ShootExecutor" (
     "id" TEXT NOT NULL,
     "shootId" TEXT NOT NULL,
-    "photographerId" TEXT NOT NULL,
-    "role" TEXT,
+    "userId" TEXT NOT NULL,
     "assignedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "ShootPhotographer_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "ShootExecutor_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "public"."ShootEditor" (
+CREATE TABLE "public"."Edit" (
     "id" TEXT NOT NULL,
-    "shootId" TEXT NOT NULL,
-    "editorId" TEXT NOT NULL,
-    "role" TEXT,
+    "editId" TEXT NOT NULL,
+    "shootId" TEXT,
+    "deliverables" TEXT,
+    "editDeliveryDate" TIMESTAMP(3),
+    "editorNotes" TEXT,
+    "editCost" DOUBLE PRECISION,
+    "editCostStatus" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'pending',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Edit_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."EditEditor" (
+    "id" TEXT NOT NULL,
+    "editId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
     "assignedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "ShootEditor_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "EditEditor_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -147,7 +183,13 @@ CREATE TABLE "public"."User" (
     "emailVerified" TIMESTAMP(3),
     "image" TEXT,
     "password" TEXT,
-    "role" TEXT NOT NULL DEFAULT 'admin',
+    "roles" TEXT[] DEFAULT ARRAY['admin']::TEXT[],
+    "phone" TEXT,
+    "specialties" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "rating" DOUBLE PRECISION DEFAULT 0,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -179,10 +221,16 @@ CREATE TABLE "public"."VerificationToken" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Client_email_key" ON "public"."Client"("email");
+CREATE INDEX "Client_name_idx" ON "public"."Client"("name");
 
 -- CreateIndex
-CREATE INDEX "Client_name_idx" ON "public"."Client"("name");
+CREATE INDEX "Client_pocEmail_idx" ON "public"."Client"("pocEmail");
+
+-- CreateIndex
+CREATE INDEX "Entity_name_idx" ON "public"."Entity"("name");
+
+-- CreateIndex
+CREATE INDEX "Entity_clientId_idx" ON "public"."Entity"("clientId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ShootType_name_key" ON "public"."ShootType"("name");
@@ -206,22 +254,16 @@ CREATE INDEX "Location_clientId_idx" ON "public"."Location"("clientId");
 CREATE UNIQUE INDEX "Location_name_clientId_key" ON "public"."Location"("name", "clientId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Photographer_email_key" ON "public"."Photographer"("email");
+CREATE INDEX "LocationPOC_name_idx" ON "public"."LocationPOC"("name");
 
 -- CreateIndex
-CREATE INDEX "Photographer_name_idx" ON "public"."Photographer"("name");
+CREATE INDEX "LocationPOC_locationId_idx" ON "public"."LocationPOC"("locationId");
 
 -- CreateIndex
-CREATE INDEX "Photographer_isActive_idx" ON "public"."Photographer"("isActive");
+CREATE INDEX "Cluster_name_idx" ON "public"."Cluster"("name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Editor_email_key" ON "public"."Editor"("email");
-
--- CreateIndex
-CREATE INDEX "Editor_name_idx" ON "public"."Editor"("name");
-
--- CreateIndex
-CREATE INDEX "Editor_isActive_idx" ON "public"."Editor"("isActive");
+CREATE INDEX "Cluster_clientId_idx" ON "public"."Cluster"("clientId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Shoot_shootId_key" ON "public"."Shoot"("shootId");
@@ -233,31 +275,64 @@ CREATE INDEX "Shoot_shootId_idx" ON "public"."Shoot"("shootId");
 CREATE INDEX "Shoot_clientId_idx" ON "public"."Shoot"("clientId");
 
 -- CreateIndex
+CREATE INDEX "Shoot_entityId_idx" ON "public"."Shoot"("entityId");
+
+-- CreateIndex
+CREATE INDEX "Shoot_locationId_idx" ON "public"."Shoot"("locationId");
+
+-- CreateIndex
 CREATE INDEX "Shoot_shootTypeId_idx" ON "public"."Shoot"("shootTypeId");
+
+-- CreateIndex
+CREATE INDEX "Shoot_dopId_idx" ON "public"."Shoot"("dopId");
 
 -- CreateIndex
 CREATE INDEX "Shoot_status_idx" ON "public"."Shoot"("status");
 
 -- CreateIndex
-CREATE INDEX "Shoot_shootStartDate_idx" ON "public"."Shoot"("shootStartDate");
+CREATE INDEX "Shoot_scheduledShootDate_idx" ON "public"."Shoot"("scheduledShootDate");
 
 -- CreateIndex
-CREATE INDEX "ShootPhotographer_shootId_idx" ON "public"."ShootPhotographer"("shootId");
+CREATE INDEX "Shoot_projectName_idx" ON "public"."Shoot"("projectName");
 
 -- CreateIndex
-CREATE INDEX "ShootPhotographer_photographerId_idx" ON "public"."ShootPhotographer"("photographerId");
+CREATE INDEX "Shoot_clusterId_idx" ON "public"."Shoot"("clusterId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ShootPhotographer_shootId_photographerId_key" ON "public"."ShootPhotographer"("shootId", "photographerId");
+CREATE INDEX "Shoot_workflowType_idx" ON "public"."Shoot"("workflowType");
 
 -- CreateIndex
-CREATE INDEX "ShootEditor_shootId_idx" ON "public"."ShootEditor"("shootId");
+CREATE INDEX "ShootExecutor_shootId_idx" ON "public"."ShootExecutor"("shootId");
 
 -- CreateIndex
-CREATE INDEX "ShootEditor_editorId_idx" ON "public"."ShootEditor"("editorId");
+CREATE INDEX "ShootExecutor_userId_idx" ON "public"."ShootExecutor"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ShootEditor_shootId_editorId_key" ON "public"."ShootEditor"("shootId", "editorId");
+CREATE UNIQUE INDEX "ShootExecutor_shootId_userId_key" ON "public"."ShootExecutor"("shootId", "userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Edit_editId_key" ON "public"."Edit"("editId");
+
+-- CreateIndex
+CREATE INDEX "Edit_editId_idx" ON "public"."Edit"("editId");
+
+-- CreateIndex
+CREATE INDEX "Edit_shootId_idx" ON "public"."Edit"("shootId");
+
+-- CreateIndex
+CREATE INDEX "Edit_status_idx" ON "public"."Edit"("status");
+
+-- CreateIndex
+CREATE INDEX "Edit_editDeliveryDate_idx" ON "public"."Edit"("editDeliveryDate");
+
+-- CreateIndex
+CREATE INDEX "EditEditor_editId_idx" ON "public"."EditEditor"("editId");
+
+-- CreateIndex
+CREATE INDEX "EditEditor_userId_idx" ON "public"."EditEditor"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "EditEditor_editId_userId_key" ON "public"."EditEditor"("editId", "userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Account_provider_providerAccountId_key" ON "public"."Account"("provider", "providerAccountId");
@@ -267,6 +342,12 @@ CREATE UNIQUE INDEX "Session_sessionToken_key" ON "public"."Session"("sessionTok
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "public"."User"("email");
+
+-- CreateIndex
+CREATE INDEX "User_email_idx" ON "public"."User"("email");
+
+-- CreateIndex
+CREATE INDEX "User_isActive_idx" ON "public"."User"("isActive");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Coupon_code_key" ON "public"."Coupon"("code");
@@ -290,28 +371,46 @@ CREATE UNIQUE INDEX "VerificationToken_token_key" ON "public"."VerificationToken
 CREATE UNIQUE INDEX "VerificationToken_identifier_token_key" ON "public"."VerificationToken"("identifier", "token");
 
 -- AddForeignKey
+ALTER TABLE "public"."Entity" ADD CONSTRAINT "Entity_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "public"."Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "public"."Location" ADD CONSTRAINT "Location_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "public"."Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."LocationPOC" ADD CONSTRAINT "LocationPOC_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "public"."Location"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Shoot" ADD CONSTRAINT "Shoot_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "public"."Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Shoot" ADD CONSTRAINT "Shoot_shootTypeId_fkey" FOREIGN KEY ("shootTypeId") REFERENCES "public"."ShootType"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Shoot" ADD CONSTRAINT "Shoot_entityId_fkey" FOREIGN KEY ("entityId") REFERENCES "public"."Entity"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Shoot" ADD CONSTRAINT "Shoot_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "public"."Location"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."ShootPhotographer" ADD CONSTRAINT "ShootPhotographer_shootId_fkey" FOREIGN KEY ("shootId") REFERENCES "public"."Shoot"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Shoot" ADD CONSTRAINT "Shoot_clusterId_fkey" FOREIGN KEY ("clusterId") REFERENCES "public"."Cluster"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."ShootPhotographer" ADD CONSTRAINT "ShootPhotographer_photographerId_fkey" FOREIGN KEY ("photographerId") REFERENCES "public"."Photographer"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Shoot" ADD CONSTRAINT "Shoot_shootTypeId_fkey" FOREIGN KEY ("shootTypeId") REFERENCES "public"."ShootType"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."ShootEditor" ADD CONSTRAINT "ShootEditor_shootId_fkey" FOREIGN KEY ("shootId") REFERENCES "public"."Shoot"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Shoot" ADD CONSTRAINT "Shoot_dopId_fkey" FOREIGN KEY ("dopId") REFERENCES "public"."User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."ShootEditor" ADD CONSTRAINT "ShootEditor_editorId_fkey" FOREIGN KEY ("editorId") REFERENCES "public"."Editor"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."ShootExecutor" ADD CONSTRAINT "ShootExecutor_shootId_fkey" FOREIGN KEY ("shootId") REFERENCES "public"."Shoot"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ShootExecutor" ADD CONSTRAINT "ShootExecutor_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Edit" ADD CONSTRAINT "Edit_shootId_fkey" FOREIGN KEY ("shootId") REFERENCES "public"."Shoot"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."EditEditor" ADD CONSTRAINT "EditEditor_editId_fkey" FOREIGN KEY ("editId") REFERENCES "public"."Edit"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."EditEditor" ADD CONSTRAINT "EditEditor_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

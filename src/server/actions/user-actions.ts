@@ -185,20 +185,60 @@ export async function getTeamMemberById(id: string) {
         image: true,
         createdAt: true,
         updatedAt: true,
-        shootAssignments: {
-          include: {
-            shoot: {
-              include: {
-                client: true,
-                shootType: true,
-              },
-            },
-          },
-        },
       },
     });
 
-    return user;
+    if (!user) {
+      return null;
+    }
+
+    // Fetch shoots where user is DOP or executor
+    const shootsAsDOP = await db.shoot.findMany({
+      where: { dopId: id },
+      include: {
+        client: true,
+        shootType: true,
+        executors: {
+          select: {
+            userId: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+
+    const shootsAsExecutor = await db.shoot.findMany({
+      where: {
+        executors: {
+          some: {
+            userId: id,
+          },
+        },
+      },
+      include: {
+        client: true,
+        shootType: true,
+        executors: {
+          select: {
+            userId: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+
+    // Combine and deduplicate shoots
+    const allShoots = [...shootsAsDOP, ...shootsAsExecutor];
+    const uniqueShoots = Array.from(
+      new Map(allShoots.map((shoot) => [shoot.id, shoot])).values()
+    );
+
+    return {
+      ...user,
+      shoots: uniqueShoots.slice(0, 10),
+    };
   } catch (error) {
     console.error("Error fetching team member:", error);
     return null;
@@ -208,9 +248,9 @@ export async function getTeamMemberById(id: string) {
 export async function createTeamMember(formData: FormData) {
   try {
     const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const phone = (formData.get("phone") as string) || undefined;
-    const password = formData.get("password") as string;
+    const email = (formData.get("email") as string) || undefined;
+    const phone = formData.get("phone") as string; // Now required
+    const password = (formData.get("password") as string) || undefined; // Now optional
     const roles = formData.getAll("roles") as string[];
     const specialties = formData.getAll("specialties") as string[];
     const rating = formData.get("rating") as string;
@@ -219,29 +259,41 @@ export async function createTeamMember(formData: FormData) {
       throw new Error("Name is required");
     }
 
-    if (!email) {
-      throw new Error("Email is required");
+    if (!phone) {
+      throw new Error("Phone is required");
     }
 
-    if (!password || password.length < 6) {
-      throw new Error("Password must be at least 6 characters");
+    // Password is now optional, but if provided, must be at least 6 characters
+    if (password && password.length < 6) {
+      throw new Error("Password must be at least 6 characters if provided");
     }
 
     if (!roles || roles.length === 0) {
       throw new Error("At least one role is required");
     }
 
-    // Check if email already exists
-    const existingUser = await db.user.findUnique({
-      where: { email },
-    });
+    // Check if email already exists (only if email is provided)
+    if (email) {
+      const existingUser = await db.user.findUnique({
+        where: { email },
+      });
 
-    if (existingUser) {
-      throw new Error("Email is already in use");
+      if (existingUser) {
+        throw new Error("Email already exists");
+      }
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Check if phone already exists
+    const existingUserByPhone = await db.user.findFirst({
+      where: { phone },
+    });
+
+    if (existingUserByPhone) {
+      throw new Error("Phone number is already in use");
+    }
+
+    // Hash password (only if provided)
+    const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
     // Create user
     await db.user.create({

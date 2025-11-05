@@ -48,16 +48,16 @@ export default async function ClientLocationsPage({ params }: PageProps) {
               <p className="text-sm font-medium">Name</p>
               <p className="text-muted-foreground">{client.name}</p>
             </div>
-            {client.email && (
+            {client.pocEmail && (
               <div>
                 <p className="text-sm font-medium">Email</p>
-                <p className="text-muted-foreground">{client.email}</p>
+                <p className="text-muted-foreground">{client.pocEmail}</p>
               </div>
             )}
-            {client.phone && (
+            {client.pocPhone && (
               <div>
                 <p className="text-sm font-medium">Phone</p>
-                <p className="text-muted-foreground">{client.phone}</p>
+                <p className="text-muted-foreground">{client.pocPhone}</p>
               </div>
             )}
             {client.address && (

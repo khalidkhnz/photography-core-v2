@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { updateEntity } from "@/server/actions/client-actions";
+import { updateEntity, getEntityById } from "@/server/actions/client-actions";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,7 @@ export default function EditEntityPage() {
   const id = params.id as string;
   const entityId = params.entityId as string;
   const [isLoading, setIsLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -48,6 +49,30 @@ export default function EditEntityPage() {
       name: "",
     },
   });
+
+  // Load existing entity data
+  useEffect(() => {
+    async function fetchEntity() {
+      try {
+        const entity = await getEntityById(entityId);
+        if (!entity) {
+          toast.error("Entity not found");
+          router.push(`/dashboard/clients/${id}?tab=entities`);
+          return;
+        }
+        form.reset({
+          name: entity.name,
+        });
+      } catch (error) {
+        console.error("Error fetching entity:", error);
+        toast.error("Failed to load entity data");
+        setError("Failed to load entity data");
+      } finally {
+        setDataLoading(false);
+      }
+    }
+    void fetchEntity();
+  }, [entityId, id, router, form]);
 
   const onSubmit = async (data: UpdateEntityFormData) => {
     setIsLoading(true);
@@ -70,6 +95,17 @@ export default function EditEntityPage() {
       setIsLoading(false);
     }
   };
+
+  if (dataLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
+          <p className="text-muted-foreground">Loading entity data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

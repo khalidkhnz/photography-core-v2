@@ -27,11 +27,24 @@ interface PageProps {
 
 export default async function ViewTeamMemberPage({ params }: PageProps) {
   const { id } = await params;
-  const member = await getTeamMemberById(id);
+  const memberData = await getTeamMemberById(id);
 
-  if (!member) {
+  if (!memberData) {
     notFound();
   }
+
+  // Type assertion - getTeamMemberById returns user with shoots
+  const member = memberData as typeof memberData & {
+    shoots: Array<{
+      id: string;
+      shootId: string;
+      scheduledShootDate: Date | string | null;
+      dopId: string | null;
+      client: { name: string } | null;
+      shootType: { name: string } | null;
+      executors: Array<{ userId: string }>;
+    }>;
+  };
 
   return (
     <div className="space-y-6">
@@ -142,7 +155,7 @@ export default async function ViewTeamMemberPage({ params }: PageProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {member.shootAssignments && member.shootAssignments.length > 0 ? (
+            {member.shoots && member.shoots.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -153,32 +166,45 @@ export default async function ViewTeamMemberPage({ params }: PageProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {member.shootAssignments.slice(0, 10).map((assignment) => (
-                    <TableRow key={assignment.id}>
-                      <TableCell>
-                        <Link
-                          href={`/dashboard/shoots/${assignment.shoot.id}`}
-                          className="text-primary hover:underline"
-                        >
-                          {assignment.shoot.shootId}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{assignment.shoot.client.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {assignment.assignmentType}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {assignment.shoot.shootStartDate
-                          ? format(
-                              new Date(assignment.shoot.shootStartDate),
-                              "MMM d, yyyy",
-                            )
-                          : "—"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {member.shoots.map((shoot: {
+                    id: string;
+                    shootId: string;
+                    scheduledShootDate: Date | string | null;
+                    dopId: string | null;
+                    client: { name: string } | null;
+                    shootType: { name: string } | null;
+                    executors: Array<{ userId: string }>;
+                  }) => {
+                    const isDOP = shoot.dopId === member.id;
+                    const isExecutor = shoot.executors.some((e) => e.userId === member.id);
+                    const role = isDOP ? "DOP" : isExecutor ? "Executor" : "N/A";
+                    const shootDate = shoot.scheduledShootDate 
+                      ? new Date(shoot.scheduledShootDate)
+                      : null;
+                    return (
+                      <TableRow key={shoot.id}>
+                        <TableCell>
+                          <Link
+                            href={`/dashboard/shoots/${shoot.id}`}
+                            className="text-primary hover:underline"
+                          >
+                            {shoot.shootId}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{shoot.client?.name ?? 'N/A'}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {shootDate
+                            ? format(shootDate, "MMM d, yyyy")
+                            : "—"}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             ) : (

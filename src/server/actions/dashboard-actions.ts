@@ -41,7 +41,8 @@ export async function getDashboardStats() {
         },
         include: {
           client: true,
-          teamMembers: {
+          dop: true,
+          executors: {
             include: {
               user: true
             }
@@ -56,19 +57,20 @@ export async function getDashboardStats() {
         where: {
           status: "delivered",
           OR: [
-            { photographyCost: null },
-            { editingCost: null }
+            { shootCost: null },
+            { overallCost: null }
           ]
         },
         include: {
           client: true,
-          teamMembers: {
+          dop: true,
+          executors: {
             include: {
               user: true
             }
           }
         },
-        orderBy: { shootEndDate: "desc" },
+        orderBy: { scheduledShootDate: "desc" },
         take: 10
       })
     ]);
@@ -93,7 +95,7 @@ export async function getMonthlyGrowthData() {
     // Get all shoots first to see what we have
     const allShoots = await db.shoot.findMany({
       select: {
-        shootStartDate: true,
+        scheduledShootDate: true,
         createdAt: true,
         status: true,
         shootId: true
@@ -250,7 +252,8 @@ export async function getShootsWithIssues() {
         client: true,
         shootType: true,
         location: true,
-        teamMembers: {
+        dop: true,
+        executors: {
           include: {
             user: true
           }
@@ -273,21 +276,22 @@ export async function getUnpaidShoots() {
       where: {
         status: "delivered",
         OR: [
-          { photographyCost: null },
-          { editingCost: null }
+          { shootCost: null },
+          { overallCost: null }
         ]
       },
       include: {
         client: true,
         shootType: true,
         location: true,
-        teamMembers: {
+        dop: true,
+        executors: {
           include: {
             user: true
           }
         }
       },
-      orderBy: { shootEndDate: "desc" }
+      orderBy: { scheduledShootDate: "desc" }
     });
 
     return unpaidShoots;
@@ -306,7 +310,8 @@ export async function getShootsByStatus(status: string) {
         client: true,
         shootType: true,
         location: true,
-        teamMembers: {
+        dop: true,
+        executors: {
           include: {
             user: true
           }
@@ -327,7 +332,7 @@ export async function getGrowthDataByDateRange(startDate: Date, endDate: Date) {
   try {
     const shoots = await db.shoot.findMany({
       where: {
-        shootStartDate: {
+        scheduledShootDate: {
           gte: startDate,
           lte: endDate
         }
@@ -345,8 +350,8 @@ export async function getGrowthDataByDateRange(startDate: Date, endDate: Date) {
 
     shoots.forEach(shoot => {
       // Monthly data
-      if (shoot.shootStartDate) {
-        const monthKey = shoot.shootStartDate.toISOString().slice(0, 7); // YYYY-MM
+      if (shoot.scheduledShootDate) {
+        const monthKey = shoot.scheduledShootDate.toISOString().slice(0, 7); // YYYY-MM
         const existingMonth = monthlyData.find(m => m.month === monthKey);
         
         if (existingMonth) {
@@ -424,7 +429,7 @@ export async function getRealTimeMetrics() {
       // Today's shoots
       db.shoot.count({
         where: {
-          shootStartDate: {
+          scheduledShootDate: {
             gte: today
           }
         }
@@ -433,7 +438,7 @@ export async function getRealTimeMetrics() {
       // This week's shoots
       db.shoot.count({
         where: {
-          shootStartDate: {
+          scheduledShootDate: {
             gte: thisWeek
           }
         }
@@ -442,7 +447,7 @@ export async function getRealTimeMetrics() {
       // This month's shoots
       db.shoot.count({
         where: {
-          shootStartDate: {
+          scheduledShootDate: {
             gte: thisMonth
           }
         }
@@ -461,7 +466,7 @@ export async function getRealTimeMetrics() {
       db.shoot.count({
         where: {
           status: "delivered",
-          shootEndDate: {
+          updatedAt: {
             gte: today
           }
         }

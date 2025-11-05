@@ -6,9 +6,10 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createShoot, generateShootIdAction } from "@/server/actions/shoot-actions";
-import { getClients, getEntitiesByClientForShoot, getSitesByEntityForShoot, getPOCsBySiteForShoot } from "@/server/actions/client-actions";
+import { getClients, getEntitiesByClientForShoot } from "@/server/actions/client-actions";
 import { getShootTypes } from "@/server/actions/shoot-type-actions";
-import { getLocationsByClient } from "@/server/actions/location-actions";
+import { getLocationsByClient, getPOCsByLocation } from "@/server/actions/location-actions";
+import { getEdits } from "@/server/actions/edit-actions";
 import { getTeamMembers } from "@/server/actions/user-actions";
 import { getClusters } from "@/server/actions/cluster-actions";
 import {
@@ -43,8 +44,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Info } from "lucide-react";
 import Link from "next/link";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Types for the form data
 interface Client {
@@ -63,6 +70,14 @@ interface Location {
   id: string;
   name: string;
   address?: string | null;
+}
+
+interface LocationPOC {
+  id: string;
+  name: string;
+  email?: string | null;
+  phone: string;
+  role?: string | null;
 }
 
 interface TeamMember {
@@ -84,22 +99,12 @@ interface Cluster {
 interface Entity {
   id: string;
   name: string;
-  sites: Site[];
 }
 
-interface Site {
+interface Edit {
   id: string;
-  name: string;
-  address?: string | null;
-  pocs: POC[];
-}
-
-interface POC {
-  id: string;
-  name: string;
-  email?: string | null;
-  phone: string;
-  role?: string | null;
+  editId: string;
+  shootId: string | null;
 }
 
 export default function CreateShootPage() {
@@ -108,11 +113,11 @@ export default function CreateShootPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [shootTypes, setShootTypes] = useState<ShootType[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
+  const [locationPOCs, setLocationPOCs] = useState<LocationPOC[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [entities, setEntities] = useState<Entity[]>([]);
-  const [sites, setSites] = useState<Site[]>([]);
-  const [pocs, setPocs] = useState<POC[]>([]);
+  const [edits, setEdits] = useState<Edit[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const router = useRouter();
 
@@ -122,57 +127,58 @@ export default function CreateShootPage() {
       shootId: "",
       clientId: "",
       entityId: "",
-      siteId: "",
-      pocId: "",
       shootTypeId: "",
       locationId: "",
       clusterId: "",
       projectName: "",
       remarks: "",
-      editId: "",
       overallDeliverables: "",
-      shootStartDate: "",
-      shootEndDate: "",
+      scheduledShootDate: "",
+      reportingTime: "",
+      wrapUpTime: "",
       photographerNotes: "",
-      editorNotes: "",
       workflowType: "shift",
-      photographyCost: "",
+      shootCost: "",
       travelCost: "",
-      editingCost: "",
-      photographerIds: [],
-      editorIds: [],
-      executorId: "",
+      shootCostStatus: undefined,
+      travelCostStatus: undefined,
+      overallCost: "",
+      overallCostStatus: undefined,
+      dopId: "",
+      executorIds: [],
+      editIds: [],
     },
   });
 
   // Watch for cascading dropdown changes
   const selectedClientId = form.watch("clientId");
-  const selectedEntityId = form.watch("entityId");
-  const selectedSiteId = form.watch("siteId");
+  const selectedLocationId = form.watch("locationId");
   const selectedWorkflowType = form.watch("workflowType");
+  const selectedReportingTime = form.watch("reportingTime");
 
   // Fetch data on component mount
   useEffect(() => {
     async function fetchData() {
       try {
-        const [clientsData, shootTypesData, teamMembersData, clustersData] =
-          await Promise.all([
-            getClients(),
-            getShootTypes(),
-            getTeamMembers(["photographer", "editor"]),
-            getClusters(),
-          ]);
+        const [
+          clientsData,
+          shootTypesData,
+          teamMembersData,
+          clustersData,
+          editsData,
+        ] = await Promise.all([
+          getClients(),
+          getShootTypes(),
+          getTeamMembers(["photographer", "editor"]),
+          getClusters(),
+          getEdits(),
+        ]);
 
         setClients(clientsData);
         setShootTypes(shootTypesData);
         setTeamMembers(teamMembersData);
         setClusters(clustersData);
-        console.log(
-          "Team members loaded:",
-          teamMembersData.length,
-          teamMembersData,
-        );
-        console.log("Clusters loaded:", clustersData.length, clustersData);
+        setEdits(editsData);
       } catch (error) {
         console.error("Error fetching data:", error);
         setError("Failed to load form data");
@@ -184,160 +190,126 @@ export default function CreateShootPage() {
     void fetchData();
   }, []);
 
-  // Fetch entities when client changes
+  // Fetch entities and locations when client changes
   useEffect(() => {
-    async function fetchClientEntities() {
+    async function fetchClientData() {
       if (selectedClientId) {
         try {
-          const clientEntities = await getEntitiesByClientForShoot(selectedClientId);
+          const [clientEntities, clientLocations] = await Promise.all([
+            getEntitiesByClientForShoot(selectedClientId),
+            getLocationsByClient(selectedClientId),
+          ]);
           setEntities(clientEntities);
-          // Reset entity selection when client changes
+          setLocations(clientLocations);
+          // Reset dependent selections
           form.setValue("entityId", "");
-          form.setValue("siteId", "");
-          form.setValue("pocId", "");
+          form.setValue("locationId", "");
         } catch (error) {
-          console.error("Error fetching client entities:", error);
+          console.error("Error fetching client data:", error);
         }
       } else {
         setEntities([]);
-        setSites([]);
-        setPocs([]);
-        form.setValue("entityId", "");
-        form.setValue("siteId", "");
-        form.setValue("pocId", "");
-      }
-    }
-
-    void fetchClientEntities();
-  }, [selectedClientId, form]);
-
-  // Fetch sites when entity changes
-  useEffect(() => {
-    async function fetchEntitySites() {
-      if (selectedEntityId) {
-        try {
-          const entitySites = await getSitesByEntityForShoot(selectedEntityId);
-          setSites(entitySites);
-          // Reset site selection when entity changes
-          form.setValue("siteId", "");
-          form.setValue("pocId", "");
-        } catch (error) {
-          console.error("Error fetching entity sites:", error);
-        }
-      } else {
-        setSites([]);
-        setPocs([]);
-        form.setValue("siteId", "");
-        form.setValue("pocId", "");
-      }
-    }
-
-    void fetchEntitySites();
-  }, [selectedEntityId, form]);
-
-  // Fetch POCs when site changes
-  useEffect(() => {
-    async function fetchSitePOCs() {
-      if (selectedSiteId) {
-        try {
-          const sitePOCs = await getPOCsBySiteForShoot(selectedSiteId);
-          setPocs(sitePOCs);
-          // Reset POC selection when site changes
-          form.setValue("pocId", "");
-        } catch (error) {
-          console.error("Error fetching site POCs:", error);
-        }
-      } else {
-        setPocs([]);
-        form.setValue("pocId", "");
-      }
-    }
-
-    void fetchSitePOCs();
-  }, [selectedSiteId, form]);
-
-  // Fetch locations when client changes
-  useEffect(() => {
-    async function fetchClientLocations() {
-      if (selectedClientId) {
-        try {
-          const clientLocations = await getLocationsByClient(selectedClientId);
-          setLocations(clientLocations);
-          // Reset location selection when client changes
-          form.setValue("locationId", "");
-        } catch (error) {
-          console.error("Error fetching client locations:", error);
-        }
-      } else {
         setLocations([]);
+        setLocationPOCs([]);
+        form.setValue("entityId", "");
         form.setValue("locationId", "");
       }
     }
 
-    void fetchClientLocations();
+    void fetchClientData();
   }, [selectedClientId, form]);
+
+  // Fetch POCs when location changes
+  useEffect(() => {
+    async function fetchLocationPOCs() {
+      if (selectedLocationId) {
+        try {
+          const pocs = await getPOCsByLocation(selectedLocationId);
+          setLocationPOCs(pocs);
+        } catch (error) {
+          console.error("Error fetching location POCs:", error);
+        }
+      } else {
+        setLocationPOCs([]);
+      }
+    }
+
+    void fetchLocationPOCs();
+  }, [selectedLocationId]);
+
+  // Auto-calculate wrap-up time (8 hours after reporting time)
+  useEffect(() => {
+    if (selectedReportingTime) {
+      try {
+        const [hours = 0, minutes = 0] = selectedReportingTime.split(":").map(Number);
+        const totalMinutes = hours * 60 + minutes + 8 * 60; // Add 8 hours
+        const wrapHours = Math.floor(totalMinutes / 60) % 24;
+        const wrapMinutes = totalMinutes % 60;
+        const wrapUpTime = `${wrapHours.toString().padStart(2, "0")}:${wrapMinutes.toString().padStart(2, "0")}`;
+        form.setValue("wrapUpTime", wrapUpTime);
+      } catch (error) {
+        console.error("Error calculating wrap-up time:", error);
+      }
+    }
+  }, [selectedReportingTime, form]);
 
   const onSubmit = async (data: CreateShootFormData) => {
     setIsLoading(true);
     setError("");
 
     try {
-      
       // Validate shootId before submission
       if (!data.shootId || data.shootId.trim() === "") {
         toast.error("Shoot ID is required");
         setIsLoading(false);
         return;
       }
-      
+
       // Convert the form data to FormData for the server action
       const formData = new FormData();
       formData.append("shootId", data.shootId.trim());
       formData.append("clientId", data.clientId);
       if (data.entityId) formData.append("entityId", data.entityId);
-      if (data.siteId) formData.append("siteId", data.siteId);
-      if (data.pocId) formData.append("pocId", data.pocId);
       formData.append("shootTypeId", data.shootTypeId);
       if (data.locationId) formData.append("locationId", data.locationId);
       if (data.clusterId) formData.append("clusterId", data.clusterId);
       if (data.projectName) formData.append("projectName", data.projectName);
       if (data.remarks) formData.append("remarks", data.remarks);
-      if (data.editId) formData.append("editId", data.editId);
       if (data.workflowType) formData.append("workflowType", data.workflowType);
-      if (data.overallDeliverables)
-        formData.append("overallDeliverables", data.overallDeliverables);
-      if (data.shootStartDate)
-        formData.append("shootStartDate", data.shootStartDate);
-      if (data.shootEndDate) formData.append("shootEndDate", data.shootEndDate);
-      if (data.photographerNotes)
-        formData.append("photographerNotes", data.photographerNotes);
-      if (data.editorNotes) formData.append("editorNotes", data.editorNotes);
-      if (data.photographyCost)
-        formData.append("photographyCost", data.photographyCost);
-      if (data.travelCost) formData.append("travelCost", data.travelCost);
-      if (data.editingCost) formData.append("editingCost", data.editingCost);
+      if (data.overallDeliverables) formData.append("overallDeliverables", data.overallDeliverables);
+      if (data.scheduledShootDate) formData.append("scheduledShootDate", data.scheduledShootDate);
+      if (data.reportingTime) formData.append("reportingTime", data.reportingTime);
+      if (data.wrapUpTime) formData.append("wrapUpTime", data.wrapUpTime);
+      if (data.photographerNotes) formData.append("photographerNotes", data.photographerNotes);
 
-      // Add photographer IDs
-      if (data.photographerIds) {
-        data.photographerIds.forEach((id) => {
-          formData.append("photographerIds", id);
+      // Cost tracking based on workflow type
+      if (data.workflowType === "shift") {
+        if (data.shootCost) formData.append("shootCost", data.shootCost);
+        if (data.travelCost) formData.append("travelCost", data.travelCost);
+        if (data.shootCostStatus) formData.append("shootCostStatus", data.shootCostStatus);
+        if (data.travelCostStatus) formData.append("travelCostStatus", data.travelCostStatus);
+      } else if (data.workflowType === "project") {
+        if (data.overallCost) formData.append("overallCost", data.overallCost);
+        if (data.overallCostStatus) formData.append("overallCostStatus", data.overallCostStatus);
+      }
+
+      // DOP and Executors
+      if (data.dopId) formData.append("dopId", data.dopId);
+      if (data.executorIds) {
+        data.executorIds.forEach((id) => {
+          formData.append("executorIds", id);
         });
       }
 
-      // Add editor IDs
-      if (data.editorIds) {
-        data.editorIds.forEach((id) => {
-          formData.append("editorIds", id);
+      // Edit IDs
+      if (data.editIds) {
+        data.editIds.forEach((id) => {
+          formData.append("editIds", id);
         });
-      }
-
-      // Add executor ID
-      if (data.executorId) {
-        formData.append("executorId", data.executorId);
       }
 
       const result = await createShoot(formData);
-      
+
       if (result.success) {
         toast.success("Shoot created successfully!");
         router.push("/dashboard/shoots");
@@ -347,7 +319,8 @@ export default function CreateShootPage() {
       }
     } catch (error) {
       console.error("Error creating shoot:", error);
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+      const errorMessage =
+        error instanceof Error ? error.message : "An unexpected error occurred";
       toast.error(errorMessage);
       setError(errorMessage);
     } finally {
@@ -364,9 +337,7 @@ export default function CreateShootPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Create New Shoot
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight">Create New Shoot</h1>
           <p className="text-muted-foreground">
             Fill in the details to create a new photography shoot
           </p>
@@ -393,9 +364,7 @@ export default function CreateShootPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Basic Information</CardTitle>
-                  <CardDescription>
-                    Essential details about the shoot
-                  </CardDescription>
+                  <CardDescription>Essential details about the shoot</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FormField
@@ -404,10 +373,7 @@ export default function CreateShootPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Client *</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a client" />
@@ -476,40 +442,41 @@ export default function CreateShootPage() {
 
                   <FormField
                     control={form.control}
-                    name="siteId"
+                    name="locationId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Site</FormLabel>
+                        <FormLabel>Location</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
-                          disabled={!selectedEntityId}
+                          disabled={!selectedClientId}
                         >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue
                                 placeholder={
-                                  !selectedEntityId
-                                    ? "Select an entity first"
-                                    : sites.length === 0
-                                      ? "No sites found for this entity"
-                                      : "Select a site"
+                                  !selectedClientId
+                                    ? "Select a client first"
+                                    : locations.length === 0
+                                      ? "No locations found for this client"
+                                      : "Select a location"
                                 }
                               />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {sites.length === 0 && selectedEntityId ? (
+                            {locations.length === 0 && selectedClientId ? (
                               <div className="text-muted-foreground px-2 py-1 text-sm">
-                                No sites found. Add sites for this entity first.
+                                No locations found. Add locations for this client first.
                               </div>
                             ) : (
-                              sites.map((site) => (
-                                <SelectItem key={site.id} value={site.id}>
-                                  {site.name}
-                                  {site.address && (
+                              locations.map((location) => (
+                                <SelectItem key={location.id} value={location.id}>
+                                  {location.name}
+                                  {location.address && (
                                     <span className="text-muted-foreground text-xs">
-                                      {" "}({site.address})
+                                      {" "}
+                                      ({location.address})
                                     </span>
                                   )}
                                 </SelectItem>
@@ -517,9 +484,9 @@ export default function CreateShootPage() {
                             )}
                           </SelectContent>
                         </Select>
-                        {!selectedEntityId && (
+                        {!selectedClientId && (
                           <p className="text-muted-foreground text-xs">
-                            Please select an entity to see available sites
+                            Please select a client to see available locations
                           </p>
                         )}
                         <FormMessage />
@@ -527,58 +494,31 @@ export default function CreateShootPage() {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="pocId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Point of Contact (POC)</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          disabled={!selectedSiteId}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue
-                                placeholder={
-                                  !selectedSiteId
-                                    ? "Select a site first"
-                                    : pocs.length === 0
-                                      ? "No POCs found for this site"
-                                      : "Select a POC"
-                                }
-                              />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {pocs.length === 0 && selectedSiteId ? (
-                              <div className="text-muted-foreground px-2 py-1 text-sm">
-                                No POCs found. Add POCs for this site first.
-                              </div>
-                            ) : (
-                              pocs.map((poc) => (
-                                <SelectItem key={poc.id} value={poc.id}>
-                                  {poc.name}
-                                  {poc.role && (
-                                    <span className="text-muted-foreground text-xs">
-                                      {" "}({poc.role})
-                                    </span>
-                                  )}
-                                </SelectItem>
-                              ))
+                  {/* Display Location POCs (Read-only) */}
+                  {locationPOCs.length > 0 && (
+                    <div className="rounded-md border p-3 bg-muted/50">
+                      <label className="text-sm font-medium mb-2 block">
+                        Location Points of Contact
+                      </label>
+                      <div className="space-y-2">
+                        {locationPOCs.map((poc) => (
+                          <div
+                            key={poc.id}
+                            className="text-sm p-2 bg-background rounded border"
+                          >
+                            <p className="font-medium">{poc.name}</p>
+                            {poc.role && (
+                              <p className="text-muted-foreground text-xs">{poc.role}</p>
                             )}
-                          </SelectContent>
-                        </Select>
-                        {!selectedSiteId && (
-                          <p className="text-muted-foreground text-xs">
-                            Please select a site to see available POCs
-                          </p>
-                        )}
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                            <p className="text-muted-foreground text-xs">
+                              📞 {poc.phone}
+                              {poc.email && ` • ✉ ${poc.email}`}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <FormField
                     control={form.control}
@@ -586,10 +526,7 @@ export default function CreateShootPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Shoot Type *</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select shoot type" />
@@ -636,7 +573,9 @@ export default function CreateShootPage() {
                                   form.setValue("shootId", result.shootId);
                                   toast.success("Shoot ID generated successfully!");
                                 } else {
-                                  toast.error(result.error ?? "Failed to generate Shoot ID");
+                                  toast.error(
+                                    result.error ?? "Failed to generate Shoot ID"
+                                  );
                                 }
                               } catch (error) {
                                 console.error("Error generating Shoot ID:", error);
@@ -661,10 +600,7 @@ export default function CreateShootPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Workflow Type *</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select workflow" />
@@ -697,10 +633,7 @@ export default function CreateShootPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Cluster</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            value={field.value}
-                          >
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select cluster (optional)" />
@@ -713,10 +646,7 @@ export default function CreateShootPage() {
                                 </div>
                               ) : (
                                 clusters.map((cluster) => (
-                                  <SelectItem
-                                    key={cluster.id}
-                                    value={cluster.id}
-                                  >
+                                  <SelectItem key={cluster.id} value={cluster.id}>
                                     {cluster.name}
                                   </SelectItem>
                                 ))
@@ -734,58 +664,6 @@ export default function CreateShootPage() {
 
                   <FormField
                     control={form.control}
-                    name="locationId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Location</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          disabled={!selectedClientId}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue
-                                placeholder={
-                                  !selectedClientId
-                                    ? "Select a client first"
-                                    : locations.length === 0
-                                      ? "No locations found for this client"
-                                      : "Select a location"
-                                }
-                              />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {locations.length === 0 && selectedClientId ? (
-                              <div className="text-muted-foreground px-2 py-1 text-sm">
-                                No locations found. Add locations for this
-                                client first.
-                              </div>
-                            ) : (
-                              locations.map((location) => (
-                                <SelectItem
-                                  key={location.id}
-                                  value={location.id}
-                                >
-                                  {location.name}
-                                </SelectItem>
-                              ))
-                            )}
-                          </SelectContent>
-                        </Select>
-                        {!selectedClientId && (
-                          <p className="text-muted-foreground text-xs">
-                            Please select a client to see available locations
-                          </p>
-                        )}
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
                     name="projectName"
                     render={({ field }) => (
                       <FormItem>
@@ -797,24 +675,6 @@ export default function CreateShootPage() {
                       </FormItem>
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="editId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Edit ID</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Edit ID (per deliverable)"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
 
                   <FormField
                     control={form.control}
@@ -839,20 +699,21 @@ export default function CreateShootPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Schedule & Details</CardTitle>
-                  <CardDescription>
-                    Timing and deliverable information
-                  </CardDescription>
+                  <CardDescription>Timing and deliverable information</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="shootStartDate"
+                    name="scheduledShootDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Start Date</FormLabel>
+                        <FormLabel>Scheduled Shoot Date</FormLabel>
                         <FormControl>
-                          <Input type="datetime-local" {...field} />
+                          <Input type="date" {...field} />
                         </FormControl>
+                        <FormDescription>
+                          Single date for this shoot (unique at date level)
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -860,13 +721,58 @@ export default function CreateShootPage() {
 
                   <FormField
                     control={form.control}
-                    name="shootEndDate"
+                    name="reportingTime"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>End Date</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Reporting Time
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Enter the reporting/start time for the shoot</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
                         <FormControl>
-                          <Input type="datetime-local" {...field} />
+                          <Input type="time" {...field} />
                         </FormControl>
+                        <FormDescription>When the shoot starts</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="wrapUpTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          Wrap-up Time
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>
+                                  Enter the wrap-up time for the shoot (auto-fills with +8
+                                  hours from reporting time)
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </FormLabel>
+                        <FormControl>
+                          <Input type="time" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          When the shoot ends (default: 8 hours after start)
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -889,81 +795,113 @@ export default function CreateShootPage() {
                       </FormItem>
                     )}
                   />
+
+                  <FormField
+                    control={form.control}
+                    name="editIds"
+                    render={() => (
+                      <FormItem>
+                        <div className="mb-4">
+                          <FormLabel className="text-base">Link Edit IDs</FormLabel>
+                          <FormDescription>
+                            Select existing edits to link to this shoot
+                          </FormDescription>
+                        </div>
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {edits
+                            .filter((edit) => !edit.shootId) // Only show independent edits
+                            .map((edit) => (
+                              <FormField
+                                key={edit.id}
+                                control={form.control}
+                                name="editIds"
+                                render={({ field }) => {
+                                  return (
+                                    <FormItem
+                                      key={edit.id}
+                                      className="flex flex-row items-start space-y-0 space-x-3"
+                                    >
+                                      <FormControl>
+                                        <Checkbox
+                                          checked={field.value?.includes(edit.id)}
+                                          onCheckedChange={(checked) => {
+                                            return checked
+                                              ? field.onChange([
+                                                  ...(field.value ?? []),
+                                                  edit.id,
+                                                ])
+                                              : field.onChange(
+                                                  (field.value ?? []).filter(
+                                                    (value) => value !== edit.id
+                                                  )
+                                                );
+                                          }}
+                                        />
+                                      </FormControl>
+                                      <FormLabel className="font-normal">
+                                        {edit.editId}
+                                      </FormLabel>
+                                    </FormItem>
+                                  );
+                                }}
+                              />
+                            ))}
+                          {edits.filter((edit) => !edit.shootId).length === 0 && (
+                            <p className="text-muted-foreground text-sm">
+                              No independent edits available. Create edits first or link
+                              them later.
+                            </p>
+                          )}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </CardContent>
               </Card>
             </div>
 
+            {/* Team Assignment Section */}
             <div className="grid gap-6 md:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Photographer Team</CardTitle>
+                  <CardTitle>Director of Photography (DOP)</CardTitle>
                   <CardDescription>
-                    Assign photographers to this shoot
+                    Main photographer and point of contact for the shoot
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="photographerIds"
-                    render={() => (
+                    name="dopId"
+                    render={({ field }) => (
                       <FormItem>
-                        <div className="mb-4">
-                          <FormLabel className="text-base">
-                            Photographers
-                          </FormLabel>
-                          <FormDescription>
-                            Select the photographers for this shoot
-                          </FormDescription>
-                        </div>
-                        {teamMembers
-                          .filter((member) =>
-                            member.roles.includes("photographer"),
-                          )
-                          .map((member) => (
-                            <FormField
-                              key={member.id}
-                              control={form.control}
-                              name="photographerIds"
-                              render={({ field }) => {
-                                return (
-                                  <FormItem
-                                    key={member.id}
-                                    className="flex flex-row items-start space-y-0 space-x-3"
-                                  >
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value?.includes(
-                                          member.id,
-                                        )}
-                                        onCheckedChange={(checked) => {
-                                          return checked
-                                            ? field.onChange([
-                                                ...(field.value ?? []),
-                                                member.id,
-                                              ])
-                                            : field.onChange(
-                                                (field.value ?? []).filter(
-                                                  (value) =>
-                                                    value !== member.id,
-                                                ),
-                                              );
-                                        }}
-                                      />
-                                    </FormControl>
-                                    <FormLabel className="font-normal">
-                                      {member.name}
-                                      {member.specialties.length > 0 && (
-                                        <span className="text-muted-foreground text-xs">
-                                          {" "}
-                                          ({member.specialties.join(", ")})
-                                        </span>
-                                      )}
-                                    </FormLabel>
-                                  </FormItem>
-                                );
-                              }}
-                            />
-                          ))}
+                        <FormLabel>DOP *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select DOP" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {teamMembers
+                              .filter((member) => member.roles.includes("photographer"))
+                              .map((member) => (
+                                <SelectItem key={member.id} value={member.id}>
+                                  {member.name}
+                                  {member.specialties.length > 0 && (
+                                    <span className="text-muted-foreground text-xs">
+                                      {" "}
+                                      ({member.specialties.join(", ")})
+                                    </span>
+                                  )}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Single photographer who is the main POC
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -991,138 +929,73 @@ export default function CreateShootPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Editor Team</CardTitle>
+                  <CardTitle>Executors</CardTitle>
                   <CardDescription>
-                    Assign editors to this shoot
+                    People who actually completed/will complete the shoot
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="editorIds"
+                    name="executorIds"
                     render={() => (
                       <FormItem>
                         <div className="mb-4">
-                          <FormLabel className="text-base">Editors</FormLabel>
+                          <FormLabel className="text-base">Select Executors</FormLabel>
                           <FormDescription>
-                            Select the editors for this shoot
+                            Multiple team members who will execute the shoot
                           </FormDescription>
                         </div>
-                        {teamMembers
-                          .filter((member) => member.roles.includes("editor"))
-                          .map((member) => (
-                            <FormField
-                              key={member.id}
-                              control={form.control}
-                              name="editorIds"
-                              render={({ field }) => {
-                                return (
-                                  <FormItem
-                                    key={member.id}
-                                    className="flex flex-row items-start space-y-0 space-x-3"
-                                  >
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value?.includes(
-                                          member.id,
-                                        )}
-                                        onCheckedChange={(checked) => {
-                                          return checked
-                                            ? field.onChange([
-                                                ...(field.value ?? []),
-                                                member.id,
-                                              ])
-                                            : field.onChange(
-                                                (field.value ?? []).filter(
-                                                  (value) =>
-                                                    value !== member.id,
-                                                ),
-                                              );
-                                        }}
-                                      />
-                                    </FormControl>
-                                    <FormLabel className="font-normal">
-                                      {member.name}
-                                      {member.specialties.length > 0 && (
-                                        <span className="text-muted-foreground text-xs">
-                                          {" "}
-                                          ({member.specialties.join(", ")})
-                                        </span>
-                                      )}
-                                    </FormLabel>
-                                  </FormItem>
-                                );
-                              }}
-                            />
-                          ))}
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="editorNotes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Editor Notes</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Notes for the editing team..."
-                            rows={3}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Executor Selection */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Executor</CardTitle>
-                  <CardDescription>
-                    Select the person who will complete this shoot
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="executorId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Executor</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select an executor" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {teamMembers
-                              .filter((member) => 
-                                member.roles.includes("photographer") || 
-                                member.roles.includes("editor")
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                          {teamMembers
+                            .filter((member) =>
+                              member.roles.some((role) =>
+                                ["photographer", "editor"].includes(role)
                               )
-                              .map((member) => (
-                                <SelectItem key={member.id} value={member.id}>
-                                  {member.name}
-                                  {member.specialties.length > 0 && (
-                                    <span className="text-muted-foreground text-xs">
-                                      {" "}
-                                      ({member.specialties.join(", ")})
-                                    </span>
-                                  )}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Choose from the selected team members who will complete this shoot
-                        </FormDescription>
+                            )
+                            .map((member) => (
+                              <FormField
+                                key={member.id}
+                                control={form.control}
+                                name="executorIds"
+                                render={({ field }) => {
+                                  return (
+                                    <FormItem
+                                      key={member.id}
+                                      className="flex flex-row items-start space-y-0 space-x-3"
+                                    >
+                                      <FormControl>
+                                        <Checkbox
+                                          checked={field.value?.includes(member.id)}
+                                          onCheckedChange={(checked) => {
+                                            return checked
+                                              ? field.onChange([
+                                                  ...(field.value ?? []),
+                                                  member.id,
+                                                ])
+                                              : field.onChange(
+                                                  (field.value ?? []).filter(
+                                                    (value) => value !== member.id
+                                                  )
+                                                );
+                                          }}
+                                        />
+                                      </FormControl>
+                                      <FormLabel className="font-normal">
+                                        {member.name}
+                                        {member.specialties.length > 0 && (
+                                          <span className="text-muted-foreground text-xs">
+                                            {" "}
+                                            ({member.specialties.join(", ")})
+                                          </span>
+                                        )}
+                                      </FormLabel>
+                                    </FormItem>
+                                  );
+                                }}
+                              />
+                            ))}
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -1136,78 +1009,181 @@ export default function CreateShootPage() {
               <CardHeader>
                 <CardTitle>Cost Tracking</CardTitle>
                 <CardDescription>
-                  Track photography and editing costs
+                  {selectedWorkflowType === "shift"
+                    ? "Track shoot cost (shift + travel) separately"
+                    : selectedWorkflowType === "project"
+                      ? "Track overall project cost (no bifurcation)"
+                      : "Track costs for this shoot"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <FormField
-                    control={form.control}
-                    name="photographyCost"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Photography Cost ($)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                {selectedWorkflowType === "shift" && (
+                  <>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <FormField
+                        control={form.control}
+                        name="shootCost"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Shoot Cost (₹)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription>Cost for the shift/day</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="travelCost"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Travel Cost ($)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="shootCostStatus"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Shoot Cost Status</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="paid">Paid</SelectItem>
+                                <SelectItem value="unpaid">Unpaid</SelectItem>
+                                <SelectItem value="onhold">On Hold</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                  <FormField
-                    control={form.control}
-                    name="editingCost"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Editing Cost ($)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="bg-muted rounded-md p-3">
-                  <p className="text-sm">
-                    <strong>Total Cost:</strong> $
-                    {(
-                      (parseFloat(form.watch("photographyCost") ?? "0") ?? 0) +
-                      (parseFloat(form.watch("travelCost") ?? "0") ?? 0) +
-                      (parseFloat(form.watch("editingCost") ?? "0") ?? 0)
-                    ).toFixed(2)}
-                  </p>
-                </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <FormField
+                        control={form.control}
+                        name="travelCost"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Travel Cost (₹)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Travel and transportation cost
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="travelCostStatus"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Travel Cost Status</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="paid">Paid</SelectItem>
+                                <SelectItem value="unpaid">Unpaid</SelectItem>
+                                <SelectItem value="onhold">On Hold</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="bg-muted rounded-md p-3">
+                      <p className="text-sm">
+                        <strong>Total Shoot Cost:</strong> ₹
+                        {(
+                          (parseFloat(form.watch("shootCost") ?? "0") ?? 0) +
+                          (parseFloat(form.watch("travelCost") ?? "0") ?? 0)
+                        ).toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {selectedWorkflowType === "project" && (
+                  <>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <FormField
+                        control={form.control}
+                        name="overallCost"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Overall Project Cost (₹)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Total lump-sum cost (includes shoot and edit)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="overallCostStatus"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Overall Cost Status</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="paid">Paid</SelectItem>
+                                <SelectItem value="unpaid">Unpaid</SelectItem>
+                                <SelectItem value="onhold">On Hold</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {selectedWorkflowType === "cluster" && (
+                  <div className="bg-muted rounded-md p-4 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Cost tracking for cluster shoots is managed at the cluster level
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

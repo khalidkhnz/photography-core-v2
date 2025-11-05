@@ -28,9 +28,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Edit, MapPin, MoreHorizontal } from "lucide-react";
+import { Edit, MapPin, MoreHorizontal, Users } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
+
+interface LocationPOC {
+  id: string;
+  name: string;
+  email?: string | null;
+  phone: string;
+  role?: string | null;
+}
 
 interface Location {
   id: string;
@@ -40,6 +48,7 @@ interface Location {
   state?: string | null;
   country?: string | null;
   createdAt: Date;
+  pocs?: LocationPOC[];
 }
 
 interface LocationsGridProps {
@@ -102,7 +111,13 @@ export function LocationsGrid({ locations }: LocationsGridProps) {
                     <DropdownMenuItem asChild>
                       <Link href={`/dashboard/locations/${location.id}/edit`}>
                         <Edit className="mr-2 h-4 w-4" />
-                        Edit
+                        Edit Location
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/dashboard/locations/${location.id}/pocs`}>
+                        <Users className="mr-2 h-4 w-4" />
+                        Manage POCs
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem
@@ -135,7 +150,32 @@ export function LocationsGrid({ locations }: LocationsGridProps) {
                   {location.country && `, ${location.country}`}
                 </div>
               )}
-              <div className="text-muted-foreground text-xs">
+              
+              {/* Location POCs */}
+              {location.pocs && location.pocs.length > 0 && (
+                <div className="space-y-2 pt-2 border-t">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Users className="h-4 w-4" />
+                    <span>POCs ({location.pocs.length})</span>
+                  </div>
+                  <div className="space-y-1">
+                    {location.pocs.map((poc) => (
+                      <div key={poc.id} className="text-xs p-2 bg-muted/50 rounded">
+                        <p className="font-medium">{poc.name}</p>
+                        {poc.role && (
+                          <p className="text-muted-foreground">{poc.role}</p>
+                        )}
+                        <p className="text-muted-foreground">
+                          📞 {poc.phone}
+                          {poc.email && ` • ✉ ${poc.email}`}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className="text-muted-foreground text-xs pt-2">
                 Created {format(new Date(location.createdAt), "MMM dd, yyyy")}
               </div>
             </CardContent>

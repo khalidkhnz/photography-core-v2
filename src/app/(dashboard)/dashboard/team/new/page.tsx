@@ -31,23 +31,18 @@ const AVAILABLE_ROLES = [
   },
 ];
 
+// Specialties aligned with shoot types (no edit-specific ones)
 const COMMON_SPECIALTIES = [
-  "Real Estate Photography",
-  "Portrait Photography",
-  "Event Photography",
+  "Real Estate",
   "Drone Photography",
+  "Event",
+  "Virtual Tours",
+  "Podcasts",
+  "Portrait Photography",
   "Landscape Photography",
   "Wedding Photography",
   "Commercial Photography",
   "Product Photography",
-  "Photo Editing",
-  "Video Editing",
-  "Color Correction",
-  "Retouching",
-  "Compositing",
-  "Motion Graphics",
-  "Audio Editing",
-  "Podcast Production",
 ];
 
 export default function NewTeamMemberPage() {
@@ -132,42 +127,45 @@ export default function NewTeamMemberPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">
-                    Email <span className="text-destructive">*</span>
-                  </Label>
+                  <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
                     name="email"
                     type="email"
                     placeholder="john@example.com"
-                    required
                   />
+                  <p className="text-muted-foreground text-xs">
+                    Optional - for login purposes
+                  </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
+                  <Label htmlFor="phone">
+                    Phone <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="phone"
                     name="phone"
                     type="tel"
-                    placeholder="+1-555-0123"
+                    placeholder="+91-98765-43210"
+                    required
                   />
+                  <p className="text-muted-foreground text-xs">
+                    Required for contact purposes
+                  </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">
-                    Password <span className="text-destructive">*</span>
-                  </Label>
+                  <Label htmlFor="password">Password</Label>
                   <Input
                     id="password"
                     name="password"
                     type="password"
-                    placeholder="Min. 6 characters"
-                    required
+                    placeholder="Min. 6 characters (optional)"
                     minLength={6}
                   />
                   <p className="text-muted-foreground text-xs">
-                    Must be at least 6 characters long
+                    Optional - only needed if they need login access
                   </p>
                 </div>
 

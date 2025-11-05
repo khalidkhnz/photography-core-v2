@@ -2,7 +2,6 @@ import { getClientById, getEntitiesByClient } from "@/server/actions/client-acti
 import { getLocationsByClient } from "@/server/actions/location-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   ArrowLeft, 
@@ -73,21 +72,21 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
               <p className="text-sm font-medium text-muted-foreground">Name</p>
               <p className="text-lg font-semibold">{client.name}</p>
             </div>
-            {client.email && (
+            {client.pocEmail && (
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Email</p>
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-sm">{client.email}</p>
+                  <p className="text-sm">{client.pocEmail}</p>
                 </div>
               </div>
             )}
-            {client.phone && (
+            {client.pocPhone && (
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Phone</p>
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-sm">{client.phone}</p>
+                  <p className="text-sm">{client.pocPhone}</p>
                 </div>
               </div>
             )}
@@ -100,10 +99,10 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
                 </div>
               </div>
             )}
-            {client.poc && (
+            {client.pocName && (
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Point of Contact</p>
-                <p className="text-sm">{client.poc}</p>
+                <p className="text-sm">{client.pocName}</p>
               </div>
             )}
             <div>
@@ -168,10 +167,8 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
                     <div className="flex items-start justify-between">
                       <div>
                         <CardTitle className="text-lg">{entity.name}</CardTitle>
-                        <CardDescription className="mt-1 flex items-center gap-2">
-                          <Badge variant="secondary">
-                            {entity.sites?.length ?? 0} sites
-                          </Badge>
+                        <CardDescription className="mt-1">
+                          Billing entity
                         </CardDescription>
                       </div>
                       <div className="flex space-x-1">
@@ -189,29 +186,6 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {entity.sites && entity.sites.length > 0 && (
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2 text-sm">
-                          <MapPin className="text-muted-foreground h-4 w-4" />
-                          <span className="text-muted-foreground">
-                            {entity.sites.length} sites
-                          </span>
-                        </div>
-                        {entity.sites.slice(0, 2).map((site) => (
-                          <div key={site.id} className="ml-6 text-xs text-muted-foreground">
-                            • {site.name}
-                            {site.pocs && site.pocs.length > 0 && (
-                              <span className="ml-2">({site.pocs.length} POCs)</span>
-                            )}
-                          </div>
-                        ))}
-                        {entity.sites.length > 2 && (
-                          <div className="ml-6 text-xs text-muted-foreground">
-                            +{entity.sites.length - 2} more sites
-                          </div>
-                        )}
-                      </div>
-                    )}
                     <div className="text-muted-foreground text-xs">
                       Created {format(new Date(entity.createdAt), "MMM dd, yyyy")}
                     </div>
@@ -321,15 +295,15 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Sites</CardTitle>
+                <CardTitle className="text-sm font-medium">Total POCs</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {entities.reduce((sum, entity) => sum + (entity.sites?.length ?? 0), 0)}
+                  {locations.reduce((sum, location) => sum + (location.pocs?.length ?? 0), 0)}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Across all entities
+                  Across all locations
                 </p>
               </CardContent>
             </Card>

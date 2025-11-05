@@ -30,10 +30,10 @@ import { toast } from "sonner";
 
 const updateClientSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  email: z.string().email().optional().or(z.literal("")),
-  phone: z.string().optional(),
   address: z.string().optional(),
-  poc: z.string().optional(),
+  pocName: z.string().optional(),
+  pocEmail: z.string().email().optional().or(z.literal("")),
+  pocPhone: z.string().optional(),
 });
 
 type UpdateClientFormData = z.infer<typeof updateClientSchema>;
@@ -49,10 +49,10 @@ export default function EditClientPage() {
     resolver: zodResolver(updateClientSchema),
     defaultValues: {
       name: "",
-      email: "",
-      phone: "",
       address: "",
-      poc: "",
+      pocName: "",
+      pocEmail: "",
+      pocPhone: "",
     },
   });
 
@@ -63,10 +63,10 @@ export default function EditClientPage() {
     try {
       const formData = new FormData();
       formData.append("name", data.name);
-      formData.append("email", data?.email ?? "");
-      formData.append("phone", data?.phone ?? "");
       formData.append("address", data?.address ?? "");
-      formData.append("poc", data?.poc ?? "");
+      formData.append("pocName", data?.pocName ?? "");
+      formData.append("pocEmail", data?.pocEmail ?? "");
+      formData.append("pocPhone", data?.pocPhone ?? "");
 
       await updateClient(id, formData);
       toast.success("Client updated successfully!");
@@ -130,40 +130,36 @@ export default function EditClientPage() {
 
               <FormField
                 control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="client@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone</FormLabel>
-                    <FormControl>
-                      <Input placeholder="+1 (555) 123-4567" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
                 name="address"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="123 Main Street, City, State" {...field} />
+                      <Input placeholder="123 Main Street, Mumbai, Maharashtra" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Main Point of Contact (Client Side)</CardTitle>
+              <CardDescription>
+                Primary contact person from the client&apos;s organization
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="pocName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>POC Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Rajesh Kumar" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -172,12 +168,26 @@ export default function EditClientPage() {
 
               <FormField
                 control={form.control}
-                name="poc"
+                name="pocEmail"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Point of Contact</FormLabel>
+                    <FormLabel>POC Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" {...field} />
+                      <Input type="email" placeholder="e.g., rajesh@atshomekraft.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="pocPhone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>POC Phone</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., +91 98765 43210" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
