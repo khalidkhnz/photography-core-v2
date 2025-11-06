@@ -1,62 +1,14 @@
 "use server";
 
 import { db } from "@/server/db";
-import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { refreshDashboardData } from "./dashboard-actions";
-
-const createShootSchema = z.object({
-  clientId: z.string().min(1, "Client is required"),
-  entityId: z.string().optional(),
-  siteId: z.string().optional(),
-  pocId: z.string().optional(),
-  shootTypeId: z.string().min(1, "Shoot type is required"),
-  locationId: z.string().optional(),
-  clusterId: z.string().optional(),
-  projectName: z.string().optional(),
-  remarks: z.string().optional(),
-  editId: z.string().optional(),
-  overallDeliverables: z.string().optional(),
-  shootStartDate: z.string().optional(),
-  shootEndDate: z.string().optional(),
-  photographerNotes: z.string().optional(),
-  editorNotes: z.string().optional(),
-  workflowType: z.string().optional(),
-  photographyCost: z.string().optional(),
-  travelCost: z.string().optional(),
-  editingCost: z.string().optional(),
-  photographerIds: z.array(z.string()).optional(), // Will map to assignmentType: "photographer"
-  editorIds: z.array(z.string()).optional(), // Will map to assignmentType: "editor"
-  executorId: z.string().optional(), // The person who completed the shoot
-  poc: z.string().optional(), // Point of Contact for the shoot (legacy field)
-});
-
-const updateShootSchema = z.object({
-  shootId: z.string().min(1, "Shoot ID is required"),
-  clientId: z.string().min(1, "Client is required"),
-  entityId: z.string().optional(),
-  siteId: z.string().optional(),
-  pocId: z.string().optional(),
-  shootTypeId: z.string().min(1, "Shoot type is required"),
-  locationId: z.string().optional(),
-  clusterId: z.string().optional(),
-  projectName: z.string().optional(),
-  remarks: z.string().optional(),
-  editId: z.string().optional(),
-  overallDeliverables: z.string().optional(),
-  shootStartDate: z.string().optional(),
-  shootEndDate: z.string().optional(),
-  photographerNotes: z.string().optional(),
-  editorNotes: z.string().optional(),
-  workflowType: z.string().optional(),
-  photographyCost: z.string().optional(),
-  travelCost: z.string().optional(),
-  editingCost: z.string().optional(),
-  photographerIds: z.array(z.string()).optional(),
-  editorIds: z.array(z.string()).optional(),
-  executorId: z.string().optional(), // The person who completed the shoot
-  poc: z.string().optional(), // Point of Contact for the shoot (legacy field)
-});
+import {
+  createShootSchema,
+  updateShootSchema,
+  type CreateShootFormData,
+  type UpdateShootFormData,
+} from "@/lib/validations/shoot";
 
 // Function to generate unique Shoot ID
 function generateShootId(shootTypeCode: string): string {
@@ -122,38 +74,43 @@ export async function checkShootIdUniqueness(shootId: string) {
 
 export async function createShoot(formData: FormData) {
   try {
-    const rawData = {
-      shootId: formData.get("shootId") as string,
+    const rawData: CreateShootFormData = {
+      shootId: (formData.get("shootId") as string)?.trim() || "",
       clientId: formData.get("clientId") as string,
       entityId: (formData.get("entityId") as string) || undefined,
-      siteId: (formData.get("siteId") as string) || undefined,
-      pocId: (formData.get("pocId") as string) || undefined,
-      shootTypeId: formData.get("shootTypeId") as string,
       locationId: (formData.get("locationId") as string) || undefined,
       clusterId: (formData.get("clusterId") as string) || undefined,
+      shootTypeId: formData.get("shootTypeId") as string,
       projectName: (formData.get("projectName") as string) || undefined,
       remarks: (formData.get("remarks") as string) || undefined,
-      editId: (formData.get("editId") as string) || undefined,
-      overallDeliverables:
-        (formData.get("overallDeliverables") as string) || undefined,
-      shootStartDate: (formData.get("shootStartDate") as string) || undefined,
-      shootEndDate: (formData.get("shootEndDate") as string) || undefined,
-      photographerNotes:
-        (formData.get("photographerNotes") as string) || undefined,
-      editorNotes: (formData.get("editorNotes") as string) || undefined,
-      workflowType: (formData.get("workflowType") as string) || undefined,
-      photographyCost: (formData.get("photographyCost") as string) || undefined,
+      overallDeliverables: (formData.get("overallDeliverables") as string) || undefined,
+      
+      // Date/Time fields
+      scheduledShootDate: (formData.get("scheduledShootDate") as string) || undefined,
+      reportingTime: (formData.get("reportingTime") as string) || undefined,
+      wrapUpTime: (formData.get("wrapUpTime") as string) || undefined,
+      
+      photographerNotes: (formData.get("photographerNotes") as string) || undefined,
+      workflowType: (formData.get("workflowType") as "shift" | "project" | "cluster") || "shift",
+      
+      // Cost tracking fields
+      shootCost: (formData.get("shootCost") as string) || undefined,
       travelCost: (formData.get("travelCost") as string) || undefined,
-      editingCost: (formData.get("editingCost") as string) || undefined,
-      photographerIds: formData.getAll("photographerIds") as string[],
-      editorIds: formData.getAll("editorIds") as string[],
-      executorId: (formData.get("executorId") as string) || undefined,
-      poc: (formData.get("poc") as string) || undefined,
+      shootCostStatus: (formData.get("shootCostStatus") as "paid" | "unpaid" | "onhold") || undefined,
+      travelCostStatus: (formData.get("travelCostStatus") as "paid" | "unpaid" | "onhold") || undefined,
+      overallCost: (formData.get("overallCost") as string) || undefined,
+      overallCostStatus: (formData.get("overallCostStatus") as "paid" | "unpaid" | "onhold") || undefined,
+      
+      // DOP and Executors
+      dopId: (formData.get("dopId") as string) || undefined,
+      executorIds: formData.getAll("executorIds") as string[],
+      
+      // Edit IDs (multiple)
+      editIds: formData.getAll("editIds") as string[],
     };
 
-
     // Check if Shoot ID is unique
-    if (!rawData.shootId || rawData.shootId.trim() === "") {
+    if (!rawData.shootId) {
       return { success: false, error: "Shoot ID is required" };
     }
 
@@ -163,110 +120,82 @@ export async function createShoot(formData: FormData) {
     }
 
     const validatedData = createShootSchema.parse(rawData);
-    
 
     // Convert cost strings to floats
-    const photographyCostFloat = validatedData.photographyCost
-      ? parseFloat(validatedData.photographyCost)
-      : undefined;
-    const travelCostFloat = validatedData.travelCost
-      ? parseFloat(validatedData.travelCost)
-      : undefined;
-    const editingCostFloat = validatedData.editingCost
-      ? parseFloat(validatedData.editingCost)
-      : undefined;
-
-    // Ensure shootId is a string
-    const shootId = String(rawData.shootId).trim();
-    
-    if (!shootId || shootId === "") {
-      throw new Error("Shoot ID is required for shoot creation");
-    }
+    const shootCostFloat = validatedData.shootCost ? parseFloat(validatedData.shootCost) : undefined;
+    const travelCostFloat = validatedData.travelCost ? parseFloat(validatedData.travelCost) : undefined;
+    const overallCostFloat = validatedData.overallCost ? parseFloat(validatedData.overallCost) : undefined;
 
     // Create the shoot
     const shoot = await db.shoot.create({
       data: {
-        shootId: shootId,
+        shootId: validatedData.shootId,
         clientId: validatedData.clientId,
         entityId: validatedData.entityId,
-        siteId: validatedData.siteId,
-        pocId: validatedData.pocId,
-        shootTypeId: validatedData.shootTypeId,
         locationId: validatedData.locationId,
         clusterId: validatedData.clusterId,
+        shootTypeId: validatedData.shootTypeId,
         projectName: validatedData.projectName,
         remarks: validatedData.remarks,
-        editId: validatedData.editId,
         overallDeliverables: validatedData.overallDeliverables,
-        shootStartDate: validatedData.shootStartDate
-          ? new Date(validatedData.shootStartDate)
+        scheduledShootDate: validatedData.scheduledShootDate
+          ? new Date(validatedData.scheduledShootDate)
           : undefined,
-        shootEndDate: validatedData.shootEndDate
-          ? new Date(validatedData.shootEndDate)
-          : undefined,
+        reportingTime: validatedData.reportingTime,
+        wrapUpTime: validatedData.wrapUpTime,
         photographerNotes: validatedData.photographerNotes,
-        editorNotes: validatedData.editorNotes,
         workflowType: validatedData.workflowType ?? "shift",
-        photographyCost: photographyCostFloat,
+        shootCost: shootCostFloat,
         travelCost: travelCostFloat,
-        editingCost: editingCostFloat,
-        executorId: validatedData.executorId, // Executor who will complete the shoot
-        poc: validatedData.poc, // Point of Contact for the shoot (legacy field)
+        shootCostStatus: validatedData.shootCostStatus,
+        travelCostStatus: validatedData.travelCostStatus,
+        overallCost: overallCostFloat,
+        overallCostStatus: validatedData.overallCostStatus,
+        dopId: validatedData.dopId,
         status: "planned",
       },
     });
 
-    // Add team members (photographers and editors)
-    const teamMembersToCreate = [];
-
-    if (
-      validatedData.photographerIds &&
-      validatedData.photographerIds.length > 0
-    ) {
-      teamMembersToCreate.push(
-        ...validatedData.photographerIds.map((userId) => ({
+    // Add executors
+    if (validatedData.executorIds && validatedData.executorIds.length > 0) {
+      await db.shootExecutor.createMany({
+        data: validatedData.executorIds.map((userId) => ({
           shootId: shoot.id,
           userId,
-          assignmentType: "photographer",
         })),
-      );
+      });
     }
 
-    if (validatedData.editorIds && validatedData.editorIds.length > 0) {
-      teamMembersToCreate.push(
-        ...validatedData.editorIds.map((userId) => ({
+    // Link to existing Edit IDs if provided
+    if (validatedData.editIds && validatedData.editIds.length > 0) {
+      // Update edits to link to this shoot
+      await db.edit.updateMany({
+        where: {
+          editId: {
+            in: validatedData.editIds,
+          },
+        },
+        data: {
           shootId: shoot.id,
-          userId,
-          assignmentType: "editor",
-        })),
-      );
-    }
-
-    if (teamMembersToCreate.length > 0) {
-      await db.shootTeamMember.createMany({
-        data: teamMembersToCreate,
+        },
       });
     }
 
     revalidatePath("/dashboard/shoots");
     await refreshDashboardData();
-    
+
     return { success: true, shootId: shoot.shootId };
   } catch (error) {
     console.error("Error creating shoot:", error);
-    
+
     // Handle unique constraint violation
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+    if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
       return { success: false, error: "Shoot ID already exists. Please choose a different ID." };
     }
-    
-    if (error instanceof Error && error.message.includes("Unique constraint failed")) {
-      return { success: false, error: "Shoot ID already exists. Please choose a different ID." };
-    }
-    
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Failed to create shoot" 
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to create shoot",
     };
   }
 }
@@ -277,14 +206,25 @@ export async function getShoots() {
       include: {
         client: true,
         entity: true,
-        site: true,
-        pocContact: true,
         shootType: true,
-        location: true,
-        executor: true,
-        teamMembers: {
+        location: {
+          include: {
+            pocs: true,
+          },
+        },
+        dop: true, // Director of Photography
+        executors: {
           include: {
             user: true,
+          },
+        },
+        edits: {
+          include: {
+            editors: {
+              include: {
+                user: true,
+              },
+            },
           },
         },
       },
@@ -302,51 +242,37 @@ export async function getShoots() {
 
 export async function updateShoot(id: string, formData: FormData) {
   try {
-    const rawPhotographerIds = formData.getAll("photographerIds") as string[];
-    const rawEditorIds = formData.getAll("editorIds") as string[];
-
-    const rawData = {
-      shootId: formData.get("shootId") as string,
+    const rawData: UpdateShootFormData = {
+      shootId: (formData.get("shootId") as string)?.trim() || "",
       clientId: formData.get("clientId") as string,
       entityId: (formData.get("entityId") as string) || undefined,
-      siteId: (formData.get("siteId") as string) || undefined,
-      pocId: (formData.get("pocId") as string) || undefined,
-      shootTypeId: formData.get("shootTypeId") as string,
       locationId: (formData.get("locationId") as string) || undefined,
       clusterId: (formData.get("clusterId") as string) || undefined,
+      shootTypeId: formData.get("shootTypeId") as string,
       projectName: (formData.get("projectName") as string) || undefined,
       remarks: (formData.get("remarks") as string) || undefined,
-      editId: (formData.get("editId") as string) || undefined,
-      overallDeliverables:
-        (formData.get("overallDeliverables") as string) || undefined,
-      shootStartDate: (formData.get("shootStartDate") as string) || undefined,
-      shootEndDate: (formData.get("shootEndDate") as string) || undefined,
-      photographerNotes:
-        (formData.get("photographerNotes") as string) || undefined,
-      editorNotes: (formData.get("editorNotes") as string) || undefined,
-      workflowType: (formData.get("workflowType") as string) || undefined,
-      photographyCost: (formData.get("photographyCost") as string) || undefined,
+      overallDeliverables: (formData.get("overallDeliverables") as string) || undefined,
+      
+      scheduledShootDate: (formData.get("scheduledShootDate") as string) || undefined,
+      reportingTime: (formData.get("reportingTime") as string) || undefined,
+      wrapUpTime: (formData.get("wrapUpTime") as string) || undefined,
+      
+      photographerNotes: (formData.get("photographerNotes") as string) || undefined,
+      workflowType: (formData.get("workflowType") as "shift" | "project" | "cluster") || "shift",
+      
+      shootCost: (formData.get("shootCost") as string) || undefined,
       travelCost: (formData.get("travelCost") as string) || undefined,
-      editingCost: (formData.get("editingCost") as string) || undefined,
-      photographerIds:
-        rawPhotographerIds.length > 0 ? rawPhotographerIds : undefined,
-      editorIds: rawEditorIds.length > 0 ? rawEditorIds : undefined,
-      executorId: (formData.get("executorId") as string) || undefined,
-      poc: (formData.get("poc") as string) || undefined,
+      shootCostStatus: (formData.get("shootCostStatus") as "paid" | "unpaid" | "onhold") || undefined,
+      travelCostStatus: (formData.get("travelCostStatus") as "paid" | "unpaid" | "onhold") || undefined,
+      overallCost: (formData.get("overallCost") as string) || undefined,
+      overallCostStatus: (formData.get("overallCostStatus") as "paid" | "unpaid" | "onhold") || undefined,
+      
+      dopId: (formData.get("dopId") as string) || undefined,
+      executorIds: formData.getAll("executorIds") as string[],
+      editIds: formData.getAll("editIds") as string[],
     };
 
     const validatedData = updateShootSchema.parse(rawData);
-
-    // Convert cost strings to floats
-    const photographyCostFloat = validatedData.photographyCost
-      ? parseFloat(validatedData.photographyCost)
-      : undefined;
-    const travelCostFloat = validatedData.travelCost
-      ? parseFloat(validatedData.travelCost)
-      : undefined;
-    const editingCostFloat = validatedData.editingCost
-      ? parseFloat(validatedData.editingCost)
-      : undefined;
 
     // Check if shootId is being changed and ensure uniqueness
     const currentShoot = await db.shoot.findUnique({
@@ -358,11 +284,14 @@ export async function updateShoot(id: string, formData: FormData) {
         where: { shootId: validatedData.shootId },
       });
       if (existingShoot) {
-        throw new Error(
-          "Shoot ID already exists. Please choose a different ID.",
-        );
+        throw new Error("Shoot ID already exists. Please choose a different ID.");
       }
     }
+
+    // Convert cost strings to floats
+    const shootCostFloat = validatedData.shootCost ? parseFloat(validatedData.shootCost) : undefined;
+    const travelCostFloat = validatedData.travelCost ? parseFloat(validatedData.travelCost) : undefined;
+    const overallCostFloat = validatedData.overallCost ? parseFloat(validatedData.overallCost) : undefined;
 
     // Update the shoot
     await db.shoot.update({
@@ -371,65 +300,61 @@ export async function updateShoot(id: string, formData: FormData) {
         shootId: validatedData.shootId,
         clientId: validatedData.clientId,
         entityId: validatedData.entityId,
-        siteId: validatedData.siteId,
-        pocId: validatedData.pocId,
-        shootTypeId: validatedData.shootTypeId,
         locationId: validatedData.locationId,
         clusterId: validatedData.clusterId,
+        shootTypeId: validatedData.shootTypeId,
         projectName: validatedData.projectName,
         remarks: validatedData.remarks,
-        editId: validatedData.editId,
         overallDeliverables: validatedData.overallDeliverables,
-        shootStartDate: validatedData.shootStartDate
-          ? new Date(validatedData.shootStartDate)
-          : undefined,
-        shootEndDate: validatedData.shootEndDate
-          ? new Date(validatedData.shootEndDate)
-          : undefined,
+        scheduledShootDate: validatedData.scheduledShootDate
+          ? new Date(validatedData.scheduledShootDate)
+          : null,
+        reportingTime: validatedData.reportingTime,
+        wrapUpTime: validatedData.wrapUpTime,
         photographerNotes: validatedData.photographerNotes,
-        editorNotes: validatedData.editorNotes,
         workflowType: validatedData.workflowType ?? "shift",
-        photographyCost: photographyCostFloat,
+        shootCost: shootCostFloat,
         travelCost: travelCostFloat,
-        editingCost: editingCostFloat,
-        executorId: validatedData.executorId,
-        poc: validatedData.poc,
+        shootCostStatus: validatedData.shootCostStatus,
+        travelCostStatus: validatedData.travelCostStatus,
+        overallCost: overallCostFloat,
+        overallCostStatus: validatedData.overallCostStatus,
+        dopId: validatedData.dopId,
       },
     });
 
-    // Update team members - delete all and recreate
-    await db.shootTeamMember.deleteMany({
+    // Update executors - delete all and recreate
+    await db.shootExecutor.deleteMany({
       where: { shootId: id },
     });
 
-    const teamMembersToCreate = [];
-
-    if (
-      validatedData.photographerIds &&
-      validatedData.photographerIds.length > 0
-    ) {
-      teamMembersToCreate.push(
-        ...validatedData.photographerIds.map((userId) => ({
+    if (validatedData.executorIds && validatedData.executorIds.length > 0) {
+      await db.shootExecutor.createMany({
+        data: validatedData.executorIds.map((userId) => ({
           shootId: id,
           userId,
-          assignmentType: "photographer",
         })),
-      );
+      });
     }
 
-    if (validatedData.editorIds && validatedData.editorIds.length > 0) {
-      teamMembersToCreate.push(
-        ...validatedData.editorIds.map((userId) => ({
+    // Update edit linkages
+    // First, unlink all edits from this shoot
+    await db.edit.updateMany({
+      where: { shootId: id },
+      data: { shootId: null },
+    });
+
+    // Then link the specified edits
+    if (validatedData.editIds && validatedData.editIds.length > 0) {
+      await db.edit.updateMany({
+        where: {
+          editId: {
+            in: validatedData.editIds,
+          },
+        },
+        data: {
           shootId: id,
-          userId,
-          assignmentType: "editor",
-        })),
-      );
-    }
-
-    if (teamMembersToCreate.length > 0) {
-      await db.shootTeamMember.createMany({
-        data: teamMembersToCreate,
+        },
       });
     }
 
@@ -438,9 +363,7 @@ export async function updateShoot(id: string, formData: FormData) {
     await refreshDashboardData();
   } catch (error) {
     console.error("Error updating shoot:", error);
-    throw new Error(
-      error instanceof Error ? error.message : "Failed to update shoot",
-    );
+    throw new Error(error instanceof Error ? error.message : "Failed to update shoot");
   }
 }
 
@@ -496,15 +419,26 @@ export async function getShootById(id: string) {
       include: {
         client: true,
         entity: true,
-        site: true,
-        pocContact: true,
         shootType: true,
-        location: true,
+        location: {
+          include: {
+            pocs: true,
+          },
+        },
         cluster: true,
-        executor: true,
-        teamMembers: {
+        dop: true,
+        executors: {
           include: {
             user: true,
+          },
+        },
+        edits: {
+          include: {
+            editors: {
+              include: {
+                user: true,
+              },
+            },
           },
         },
       },

@@ -14,6 +14,7 @@ import {
   LogOut,
   UserCheck,
   Type,
+  Pencil,
   // Building2,
   // Award,
   // Tag,
@@ -35,6 +36,15 @@ const navigation = [
       { name: "All Shoots", href: "/dashboard/shoots" },
       { name: "Create Shoot", href: "/dashboard/shoots/new" },
       { name: "Clusters", href: "/dashboard/clusters" },
+    ],
+  },
+  {
+    name: "Edits",
+    href: "/dashboard/edits",
+    icon: Pencil,
+    children: [
+      { name: "All Edits", href: "/dashboard/edits" },
+      { name: "Create Edit", href: "/dashboard/edits/new" },
     ],
   },
   {

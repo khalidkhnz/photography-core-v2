@@ -4,7 +4,6 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { deleteShoot, updateShootStatus } from "@/server/actions/shoot-actions";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -46,7 +45,7 @@ interface Shoot {
   shootId: string;
   projectName?: string | null;
   remarks?: string | null;
-  shootStartDate?: Date | null;
+  scheduledShootDate?: Date | null;
   status: string;
   client: {
     name: string;
@@ -57,14 +56,12 @@ interface Shoot {
   location: {
     name: string;
   } | null;
-  executor: {
+  dop: {
     id: string;
     name: string | null;
   } | null;
-  poc?: string | null;
-  teamMembers?: Array<{
+  executors?: Array<{
     userId: string;
-    assignmentType: string;
     user: { name: string | null };
   }>;
 }
@@ -130,8 +127,8 @@ export function ShootsTable({ shoots, clients }: ShootsTableProps) {
         filterStatus === "all" || shoot.status === filterStatus;
 
       // Date filter
-      const shootDate = shoot.shootStartDate
-        ? new Date(shoot.shootStartDate)
+      const shootDate = shoot.scheduledShootDate
+        ? new Date(shoot.scheduledShootDate)
         : null;
       const matchesDateFrom =
         !filterDateFrom || (shootDate && shootDate >= new Date(filterDateFrom));
@@ -154,32 +151,6 @@ export function ShootsTable({ shoots, clients }: ShootsTableProps) {
     filterDateFrom,
     filterDateTo,
   ]);
-
-  // Get team assigned based on status
-  const getTeamAssigned = (shoot: Shoot) => {
-    const photographers =
-      shoot.teamMembers?.filter((tm) => tm.assignmentType === "photographer") ??
-      [];
-    const editors =
-      shoot.teamMembers?.filter((tm) => tm.assignmentType === "editor") ?? [];
-
-    switch (shoot.status) {
-      case "planned":
-      case "in_progress":
-        if (photographers.length > 0) {
-          return photographers.map(tm => tm.user.name).filter(Boolean).join(", ");
-        }
-        return "Not Assigned";
-      case "editing":
-      case "delivered":
-        if (editors.length > 0) {
-          return editors.map(tm => tm.user.name).filter(Boolean).join(", ");
-        }
-        return "Not Assigned";
-      default:
-        return "—";
-    }
-  };
 
   return (
     <>
@@ -288,9 +259,8 @@ export function ShootsTable({ shoots, clients }: ShootsTableProps) {
             <TableHead>Location</TableHead>
             <TableHead>Start Date</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Executor</TableHead>
-            <TableHead>POC</TableHead>
-            <TableHead>Team Assigned</TableHead>
+            <TableHead>DOP</TableHead>
+            <TableHead>Executors</TableHead>
             <TableHead>Remarks</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -316,8 +286,8 @@ export function ShootsTable({ shoots, clients }: ShootsTableProps) {
                 )}
               </TableCell>
               <TableCell>
-                {shoot.shootStartDate ? (
-                  format(new Date(shoot.shootStartDate), "MMM dd, yyyy")
+                {shoot.scheduledShootDate ? (
+                  format(new Date(shoot.scheduledShootDate), "MMM dd, yyyy")
                 ) : (
                   <span className="text-muted-foreground">Not set</span>
                 )}
@@ -344,21 +314,20 @@ export function ShootsTable({ shoots, clients }: ShootsTableProps) {
                 </Select>
               </TableCell>
               <TableCell>
-                {shoot.executor ? (
-                  <span className="font-medium">{shoot.executor.name}</span>
+                {shoot.dop ? (
+                  <span className="font-medium">{shoot.dop.name}</span>
                 ) : (
                   <span className="text-muted-foreground">Not assigned</span>
                 )}
               </TableCell>
               <TableCell>
-                {shoot.poc ? (
-                  <span className="font-medium">{shoot.poc}</span>
+                {shoot.executors && shoot.executors.length > 0 ? (
+                  <span className="text-sm">
+                    {shoot.executors.map((ex) => ex.user.name).filter(Boolean).join(", ")}
+                  </span>
                 ) : (
-                  <span className="text-muted-foreground">—</span>
+                  <span className="text-muted-foreground">Not assigned</span>
                 )}
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline">{getTeamAssigned(shoot)}</Badge>
               </TableCell>
               <TableCell>
                 {shoot.remarks ? (

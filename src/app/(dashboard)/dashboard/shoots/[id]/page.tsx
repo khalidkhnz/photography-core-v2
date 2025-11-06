@@ -122,16 +122,10 @@ export default async function ViewShootPage({ params }: PageProps) {
                     {shoot.shootType.name} ({shoot.shootType.code})
                   </p>
                 </div>
-                {shoot.executor && (
+                {shoot.entity && (
                   <div>
-                    <p className="text-sm font-medium">Executor</p>
-                    <p className="text-muted-foreground">{shoot.executor.name}</p>
-                  </div>
-                )}
-                {shoot.poc && (
-                  <div>
-                    <p className="text-sm font-medium">Point of Contact</p>
-                    <p className="text-muted-foreground">{shoot.poc}</p>
+                    <p className="text-sm font-medium">Entity</p>
+                    <p className="text-muted-foreground">{shoot.entity.name}</p>
                   </div>
                 )}
                 {shoot.location && (
@@ -153,10 +147,16 @@ export default async function ViewShootPage({ params }: PageProps) {
                     <p className="text-muted-foreground">{shoot.projectName}</p>
                   </div>
                 )}
-                {shoot.editId && (
+                {shoot.edits && shoot.edits.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium">Edit ID</p>
-                    <p className="text-muted-foreground">{shoot.editId}</p>
+                    <p className="text-sm font-medium">Edit IDs</p>
+                    <div className="flex gap-1 flex-wrap">
+                      {shoot.edits.map((edit) => (
+                        <Badge key={edit.id} variant="secondary">
+                          {edit.editId}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 )}
                 <div>
@@ -211,21 +211,25 @@ export default async function ViewShootPage({ params }: PageProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                {shoot.shootStartDate && (
+              <div className="grid gap-4 md:grid-cols-3">
+                {shoot.scheduledShootDate && (
                   <div>
-                    <p className="text-sm font-medium">Start Date</p>
+                    <p className="text-sm font-medium">Shoot Date</p>
                     <p className="text-muted-foreground">
-                      {format(new Date(shoot.shootStartDate), "PPP 'at' p")}
+                      {format(new Date(shoot.scheduledShootDate), "PPP")}
                     </p>
                   </div>
                 )}
-                {shoot.shootEndDate && (
+                {shoot.reportingTime && (
                   <div>
-                    <p className="text-sm font-medium">End Date</p>
-                    <p className="text-muted-foreground">
-                      {format(new Date(shoot.shootEndDate), "PPP 'at' p")}
-                    </p>
+                    <p className="text-sm font-medium">Reporting Time</p>
+                    <p className="text-muted-foreground">{shoot.reportingTime}</p>
+                  </div>
+                )}
+                {shoot.wrapUpTime && (
+                  <div>
+                    <p className="text-sm font-medium">Wrap Up Time</p>
+                    <p className="text-muted-foreground">{shoot.wrapUpTime}</p>
                   </div>
                 )}
               </div>
@@ -241,58 +245,29 @@ export default async function ViewShootPage({ params }: PageProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {shoot.teamMembers &&
-                shoot.teamMembers.filter(
-                  (tm) => tm.assignmentType === "photographer",
-                ).length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium">Photographers</p>
-                    <div className="mt-2 space-y-2">
-                      {shoot.teamMembers
-                        .filter((tm) => tm.assignmentType === "photographer")
-                        .map((tm) => (
-                          <div
-                            key={tm.id}
-                            className="flex items-center justify-between"
-                          >
-                            <span className="text-muted-foreground">
-                              {tm.user.name}
-                            </span>
-                            {tm.role && (
-                              <Badge variant="outline">{tm.role}</Badge>
-                            )}
-                          </div>
-                        ))}
-                    </div>
+              {shoot.dop && (
+                <div>
+                  <p className="text-sm font-medium">DOP (Director of Photography)</p>
+                  <div className="mt-2">
+                    <Badge variant="default">{shoot.dop.name}</Badge>
                   </div>
-                )}
+                </div>
+              )}
 
-              {shoot.teamMembers &&
-                shoot.teamMembers.filter((tm) => tm.assignmentType === "editor")
-                  .length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium">Editors</p>
-                    <div className="mt-2 space-y-2">
-                      {shoot.teamMembers
-                        .filter((tm) => tm.assignmentType === "editor")
-                        .map((tm) => (
-                          <div
-                            key={tm.id}
-                            className="flex items-center justify-between"
-                          >
-                            <span className="text-muted-foreground">
-                              {tm.user.name}
-                            </span>
-                            {tm.role && (
-                              <Badge variant="outline">{tm.role}</Badge>
-                            )}
-                          </div>
-                        ))}
-                    </div>
+              {shoot.executors && shoot.executors.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium">Executors</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {shoot.executors.map((executor) => (
+                      <Badge key={executor.id} variant="secondary">
+                        {executor.user.name}
+                      </Badge>
+                    ))}
                   </div>
-                )}
+                </div>
+              )}
 
-              {(!shoot.teamMembers || shoot.teamMembers.length === 0) && (
+              {!shoot.dop && (!shoot.executors || shoot.executors.length === 0) && (
                 <p className="text-muted-foreground">
                   No team members assigned
                 </p>
@@ -301,81 +276,83 @@ export default async function ViewShootPage({ params }: PageProps) {
           </Card>
 
           {/* Notes */}
-          {(shoot.photographerNotes ?? shoot.editorNotes) && (
+          {shoot.photographerNotes && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  Notes
+                  Photographer Notes
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {shoot.photographerNotes && (
-                  <div>
-                    <p className="text-sm font-medium">Photographer Notes</p>
-                    <p className="text-muted-foreground">
-                      {shoot.photographerNotes}
-                    </p>
-                  </div>
-                )}
-                {shoot.editorNotes && (
-                  <div>
-                    <p className="text-sm font-medium">Editor Notes</p>
-                    <p className="text-muted-foreground">{shoot.editorNotes}</p>
-                  </div>
-                )}
+              <CardContent>
+                <p className="text-muted-foreground">
+                  {shoot.photographerNotes}
+                </p>
               </CardContent>
             </Card>
           )}
 
           {/* Cost Tracking */}
-          {(shoot.photographyCost !== null ||
+          {(shoot.shootCost !== null ||
             shoot.travelCost !== null ||
-            shoot.editingCost !== null) && (
+            shoot.overallCost !== null) && (
             <Card>
               <CardHeader>
                 <CardTitle>Cost Tracking</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-3">
-                  {shoot.photographyCost !== null && (
-                    <div>
-                      <p className="text-sm font-medium">Photography Cost</p>
-                      <p className="text-lg font-semibold">
-                        ${shoot.photographyCost.toFixed(2)}
-                      </p>
-                    </div>
-                  )}
-                  {shoot.travelCost !== null && (
-                    <div>
-                      <p className="text-sm font-medium">Travel Cost</p>
-                      <p className="text-lg font-semibold">
-                        ${shoot.travelCost.toFixed(2)}
-                      </p>
-                    </div>
-                  )}
-                  {shoot.editingCost !== null && (
-                    <div>
-                      <p className="text-sm font-medium">Editing Cost</p>
-                      <p className="text-lg font-semibold">
-                        ${shoot.editingCost.toFixed(2)}
-                      </p>
-                    </div>
-                  )}
-                </div>
-                <div className="border-t pt-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">Total Cost</p>
-                    <p className="text-xl font-bold">
-                      $
-                      {(
-                        (shoot.photographyCost ?? 0) +
-                        (shoot.travelCost ?? 0) +
-                        (shoot.editingCost ?? 0)
-                      ).toFixed(2)}
+                {extendedShoot.workflowType === "project" ? (
+                  <div>
+                    <p className="text-sm font-medium">Overall Project Cost</p>
+                    <p className="text-2xl font-bold">
+                      ₹{(shoot.overallCost ?? 0).toFixed(2)}
                     </p>
+                    {shoot.overallCostStatus && (
+                      <Badge variant="secondary" className="mt-1">
+                        {shoot.overallCostStatus}
+                      </Badge>
+                    )}
                   </div>
-                </div>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {shoot.shootCost !== null && (
+                      <div>
+                        <p className="text-sm font-medium">Shoot Cost</p>
+                        <p className="text-lg font-semibold">
+                          ₹{shoot.shootCost.toFixed(2)}
+                        </p>
+                        {shoot.shootCostStatus && (
+                          <Badge variant="secondary" className="text-xs">
+                            {shoot.shootCostStatus}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                    {shoot.travelCost !== null && (
+                      <div>
+                        <p className="text-sm font-medium">Travel Cost</p>
+                        <p className="text-lg font-semibold">
+                          ₹{shoot.travelCost.toFixed(2)}
+                        </p>
+                        {shoot.travelCostStatus && (
+                          <Badge variant="secondary" className="text-xs">
+                            {shoot.travelCostStatus}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {extendedShoot.workflowType !== "project" && (shoot.shootCost !== null || shoot.travelCost !== null) && (
+                  <div className="border-t pt-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">Total Shoot Cost</p>
+                      <p className="text-xl font-bold">
+                        ₹{((shoot.shootCost ?? 0) + (shoot.travelCost ?? 0)).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

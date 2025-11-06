@@ -219,8 +219,12 @@ export default async function DashboardPage() {
               </TableHeader>
               <TableBody>
                 {unpaidShoots.slice(0, 10).map((shoot) => {
-                  const teamMembers = shoot.teamMembers?.map(tm => tm.user.name).filter(Boolean).join(', ') ?? 'N/A';
-                  const totalCost = (shoot.photographyCost ?? 0) + (shoot.travelCost ?? 0) + (shoot.editingCost ?? 0);
+                  const dopName = shoot.dop?.name ?? 'N/A';
+                  const executorNames = shoot.executors?.map(e => e.user.name).join(', ') ?? '';
+                  const teamMembers = dopName !== 'N/A' && executorNames ? `${dopName}, ${executorNames}` : dopName !== 'N/A' ? dopName : executorNames || 'N/A';
+                  const totalCost = shoot.workflowType === 'project'
+                    ? (shoot.overallCost ?? 0)
+                    : (shoot.shootCost ?? 0) + (shoot.travelCost ?? 0);
                   
                   return (
                     <TableRow key={shoot.id}>
@@ -228,7 +232,7 @@ export default async function DashboardPage() {
                       <TableCell>{shoot.projectName ?? 'N/A'}</TableCell>
                       <TableCell>{teamMembers}</TableCell>
                       <TableCell>
-                        {shoot.shootEndDate ? format(new Date(shoot.shootEndDate), 'MMM dd, yyyy') : 'N/A'}
+                        {shoot.scheduledShootDate ? format(new Date(shoot.scheduledShootDate), 'MMM dd, yyyy') : 'N/A'}
                       </TableCell>
                       <TableCell>
                         ₹{totalCost.toLocaleString()}

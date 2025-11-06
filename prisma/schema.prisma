@@ -19,10 +19,11 @@ datasource db {
 model Client {
   id        String   @id @default(cuid())
   name      String   // Trade name (e.g., ATS HomeKraft)
-  email     String?  // Client email
-  phone     String?  // Client phone
   address   String?  // Client address
-  poc       String?  // Point of Contact
+  // Main POC details (from client's side, not company)
+  pocName   String?  // Main point of contact name
+  pocEmail  String?  // Main POC email
+  pocPhone  String?  // Main POC phone
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -31,7 +32,7 @@ model Client {
   shoots    Shoot[]
 
   @@index([name])
-  @@index([email])
+  @@index([pocEmail])
 }
 
 model Entity {
@@ -42,45 +43,10 @@ model Entity {
   updatedAt DateTime @updatedAt
 
   client    Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  sites     Site[]
   shoots    Shoot[]
 
   @@index([name])
   @@index([clientId])
-}
-
-model Site {
-  id        String   @id @default(cuid())
-  name      String   // Site name/location
-  address   String?  // Site address
-  entityId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  entity    Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  pocs      POC[]
-  locations Location[]
-  shoots    Shoot[]
-
-  @@index([name])
-  @@index([entityId])
-}
-
-model POC {
-  id        String   @id @default(cuid())
-  name      String   // POC name
-  email     String?  // POC email
-  phone     String   // POC phone (compulsory)
-  role      String?  // POC role/title
-  siteId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  site      Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  shoots    Shoot[]
-
-  @@index([name])
-  @@index([siteId])
 }
 
 model ShootType {
@@ -97,6 +63,7 @@ model ShootType {
     @@index([code])
 }
 
+// Location model - independent, with embedded POCs
 model Location {
   id          String   @id @default(cuid())
   name        String
@@ -105,18 +72,34 @@ model Location {
   state       String?
   country     String?
   coordinates String? // For storing lat/lng
-  siteId      String? // Link to site
-  clientId    String? // Link to client (for backward compatibility)
+  clientId    String  // Link to client
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  site        Site?    @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  client      Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client      Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  pocs        LocationPOC[] // Multiple POCs per location
   shoots      Shoot[]
 
-  @@unique([name, siteId]) // Unique name per site
+  @@unique([name, clientId]) // Unique name per client
   @@index([city])
   @@index([clientId])
+}
+
+// POC linked to Location
+model LocationPOC {
+  id         String   @id @default(cuid())
+  name       String   // POC name
+  email      String?  // POC email
+  phone      String   // POC phone (compulsory)
+  role       String?  // POC role/title
+  locationId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@index([name])
+  @@index([locationId])
 }
 
 // Cluster for grouping multiple shoots (e.g., quarterly construction updates)
@@ -137,76 +120,119 @@ model Cluster {
 }
 
 model Shoot {
-    id                    String   @id @default(cuid())
-    shootId               String   @unique // Custom shoot ID (e.g., RE-2024-001), editable by admin
+    id                    String    @id @default(cuid())
+    shootId               String    @unique // Custom shoot ID (e.g., RE-2024-001), editable by admin
     clientId              String
-    entityId              String?  // Link to specific entity
-    siteId                String?  // Link to specific site
-    pocId                 String?  // Link to specific POC
-    shootTypeId           String
+    entityId              String?   // Link to specific entity
     locationId            String?
-    clusterId             String?  // Link to cluster for cluster-basis workflow
-    projectName           String?  // User-defined project name
-    remarks               String?  // Free text remarks
-    editId                String?  // Per deliverable basis linked to shoot ID
+    clusterId             String?   // Link to cluster for cluster-basis workflow
+    shootTypeId           String
+    projectName           String?   // User-defined project name
+    remarks               String?   // Free text remarks
     overallDeliverables   String?
-    shootStartDate        DateTime?
-    shootEndDate          DateTime?
-    photographerNotes     String?
-    editorNotes           String?
-    // Workflow type: shift (per-shift/per-day), project (lump-sum), cluster (grouped shoots)
-    workflowType          String   @default("shift") // shift, project, cluster
-    // Cost tracking fields
-    photographyCost       Float?   // Shoot cost
-    travelCost            Float?   // Travel cost (separate from photography)
-    editingCost           Float?   // Editing cost
-    executorId            String?  // The person who completed the shoot (from selected team members)
-    poc                   String?  // Point of Contact for the shoot (legacy field, use pocId instead)
-    status                String   @default("planned") // planned, in_progress, editing, delivered, completed, blocked, postponed, cancelled
-    createdAt             DateTime @default(now())
-    updatedAt             DateTime @updatedAt
-
-    client                Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-    entity                Entity?  @relation(fields: [entityId], references: [id], onDelete: SetNull)
-    site                  Site?    @relation(fields: [siteId], references: [id], onDelete: SetNull)
-    pocContact            POC?     @relation(fields: [pocId], references: [id], onDelete: SetNull)
-    shootType             ShootType @relation(fields: [shootTypeId], references: [id])
-    location              Location? @relation(fields: [locationId], references: [id])
-    cluster               Cluster? @relation(fields: [clusterId], references: [id], onDelete: SetNull)
-    executor              User?    @relation("ShootExecutor", fields: [executorId], references: [id], onDelete: SetNull)
     
-    teamMembers           ShootTeamMember[] // Unified team assignments (photographers & editors)
+    // Date/Time fields - single shoot date with reporting and wrap times
+    scheduledShootDate    DateTime? // The date of the shoot
+    reportingTime         String?   // Shoot start time (e.g., "09:00 AM")
+    wrapUpTime            String?   // Shoot end time (e.g., "05:00 PM", default 8 hours after reporting)
+    
+    photographerNotes     String?
+    
+    // Workflow type: shift (per-shift/per-day), project (lump-sum), cluster (grouped shoots)
+    workflowType          String    @default("shift") // shift, project, cluster
+    
+    // Cost tracking fields (for shoot only)
+    shootCost             Float?    // Shoot cost (shift cost for shift-level)
+    travelCost            Float?    // Travel cost (separate from shoot cost)
+    shootCostStatus       String?   // paid, unpaid, onhold
+    travelCostStatus      String?   // paid, unpaid, onhold
+    overallCost           Float?    // For project-level shoots (no bifurcation)
+    overallCostStatus     String?   // For project-level shoots
+    
+    // DOP and Executors
+    dopId                 String?   // Director of Photography (single, main POC)
+    
+    status                String    @default("planned") // planned, in_progress, editing, delivered, completed, blocked, postponed, cancelled
+    createdAt             DateTime  @default(now())
+    updatedAt             DateTime  @updatedAt
+
+    client                Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+    entity                Entity?     @relation(fields: [entityId], references: [id], onDelete: SetNull)
+    location              Location?   @relation(fields: [locationId], references: [id], onDelete: SetNull)
+    cluster               Cluster?    @relation(fields: [clusterId], references: [id], onDelete: SetNull)
+    shootType             ShootType   @relation(fields: [shootTypeId], references: [id])
+    dop                   User?       @relation("ShootDOP", fields: [dopId], references: [id], onDelete: SetNull)
+    
+    executors             ShootExecutor[] // Multiple executors who completed the shoot
+    edits                 Edit[]          // One shoot can have multiple edit IDs
 
     @@index([shootId])
     @@index([clientId])
     @@index([entityId])
-    @@index([siteId])
-    @@index([pocId])
+    @@index([locationId])
     @@index([shootTypeId])
-    @@index([executorId])
+    @@index([dopId])
     @@index([status])
-    @@index([shootStartDate])
+    @@index([scheduledShootDate])
     @@index([projectName])
     @@index([clusterId])
     @@index([workflowType])
 }
 
-// Unified junction table for shoot team assignments (photographers & editors)
-model ShootTeamMember {
-    id             String   @id @default(cuid())
-    shootId        String
-    userId         String   // References User (can have photographer or editor role)
-    assignmentType String   // "photographer" or "editor" - what they're doing in this shoot
-    role           String?  // "Lead", "Assistant", etc. - hierarchical role
-    assignedAt     DateTime @default(now())
+// Executors - actual people who completed the shoot
+model ShootExecutor {
+    id         String   @id @default(cuid())
+    shootId    String
+    userId     String
+    assignedAt DateTime @default(now())
 
-    shoot          Shoot @relation(fields: [shootId], references: [id], onDelete: Cascade)
-    user           User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+    shoot      Shoot @relation(fields: [shootId], references: [id], onDelete: Cascade)
+    user       User  @relation("Executors", fields: [userId], references: [id], onDelete: Cascade)
 
-    @@unique([shootId, userId, assignmentType]) // Same user can be both photographer AND editor in one shoot
+    @@unique([shootId, userId])
     @@index([shootId])
     @@index([userId])
-    @@index([assignmentType])
+}
+
+// Edit tracking - separate from shoots, per deliverable basis
+model Edit {
+    id                 String   @id @default(cuid())
+    editId             String   @unique // Custom edit ID
+    shootId            String?  // Can be linked to shoot or exist independently
+    deliverables       String?  // Free text for overall deliverables
+    editDeliveryDate   DateTime? // Delivery date for the edit
+    editorNotes        String?
+    
+    // Cost tracking for edit
+    editCost           Float?   // Editing cost
+    editCostStatus     String?  // paid, unpaid, onhold
+    
+    status             String   @default("pending") // pending, in_progress, completed, delivered
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
+
+    shoot              Shoot?   @relation(fields: [shootId], references: [id], onDelete: SetNull)
+    editors            EditEditor[] // Team assigned to this edit
+
+    @@index([editId])
+    @@index([shootId])
+    @@index([status])
+    @@index([editDeliveryDate])
+}
+
+// Editors assigned to an edit
+model EditEditor {
+    id         String   @id @default(cuid())
+    editId     String
+    userId     String
+    assignedAt DateTime @default(now())
+
+    edit       Edit @relation(fields: [editId], references: [id], onDelete: Cascade)
+    user       User @relation("EditEditors", fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([editId, userId])
+    @@index([editId])
+    @@index([userId])
 }
 
 // Necessary for Next auth
@@ -240,17 +266,17 @@ model Session {
 model User {
     id            String    @id @default(cuid())
     name          String?
-    email         String?   @unique
+    email         String?   @unique // Non-compulsory
     emailVerified DateTime?
     image         String?
-    password      String?   // For email/password authentication
+    password      String?   // Non-compulsory for email/password authentication
     
     // Multi-role support: user can be admin, photographer, editor, or any combination
     roles         String[]  @default(["admin"]) // ["admin"], ["photographer"], ["editor"], ["photographer", "editor"], etc.
     
     // Team member fields (for photographer/editor roles)
-    phone         String?
-    specialties   String[]  @default([]) // Photography, Videography, Photo Editing, Video Editing, etc.
+    phone         String?   // Compulsory (will be validated in application logic)
+    specialties   String[]  @default([]) // Aligned with shoot types
     rating        Float?    @default(0) // Performance rating (0-5)
     isActive      Boolean   @default(true) // Active team member status
     
@@ -260,8 +286,9 @@ model User {
     // Relations
     accounts         Account[]
     sessions         Session[]
-    shootAssignments ShootTeamMember[]
-    executedShoots   Shoot[]     @relation("ShootExecutor")
+    dopShoots        Shoot[]         @relation("ShootDOP")
+    executorShoots   ShootExecutor[] @relation("Executors")
+    editAssignments  EditEditor[]    @relation("EditEditors")
     
     @@index([email])
     @@index([isActive])

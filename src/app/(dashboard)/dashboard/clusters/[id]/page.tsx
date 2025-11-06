@@ -15,17 +15,9 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { notFound } from "next/navigation";
 
-interface ShootWithCosts {
-  id: string;
-  shootId: string;
-  photographyCost?: number | null;
-  travelCost?: number | null;
-  editingCost?: number | null;
-  shootStartDate?: Date | null;
-  status: string;
-  client: { name: string };
-  shootType: { name: string };
-}
+type ClusterWithShoots = NonNullable<Awaited<ReturnType<typeof getClusterById>>>;
+
+type ShootInCluster = NonNullable<ClusterWithShoots["shoots"]>[number];
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -33,23 +25,30 @@ interface PageProps {
 
 export default async function ViewClusterPage({ params }: PageProps) {
   const { id } = await params;
-  const cluster = await getClusterById(id);
+  const clusterData = await getClusterById(id);
 
-  if (!cluster) {
+  if (!clusterData) {
     notFound();
   }
 
+  const cluster = clusterData;
+
   // Calculate total cost from shoots if not set
-  const calculatedTotalCost = cluster.shoots.reduce((sum, shoot) => {
-    const typedShoot = shoot as unknown as ShootWithCosts;
-    const shootCost =
-      (typedShoot.photographyCost ?? 0) +
-      (typedShoot.travelCost ?? 0) +
-      (typedShoot.editingCost ?? 0);
-    return sum + shootCost;
+  const calculatedTotalCost = (cluster.shoots ?? []).reduce((sum: number, shoot: ShootInCluster) => {
+    // For shift-based: shootCost + travelCost, for project-based: overallCost
+    const workflowType = shoot.workflowType ?? "shift";
+    const shootCost = typeof shoot.shootCost === "number" ? shoot.shootCost : 0;
+    const travelCost = typeof shoot.travelCost === "number" ? shoot.travelCost : 0;
+    const overallCost = typeof shoot.overallCost === "number" ? shoot.overallCost : 0;
+    
+    const shootTotalCost = workflowType === "project"
+      ? overallCost
+      : shootCost + travelCost;
+    
+    return sum + shootTotalCost;
   }, 0);
 
-  const displayTotalCost = cluster.totalCost ?? calculatedTotalCost;
+  const displayTotalCost = typeof cluster.totalCost === "number" ? cluster.totalCost : calculatedTotalCost;
 
   return (
     <div className="space-y-6">
@@ -93,7 +92,7 @@ export default async function ViewClusterPage({ params }: PageProps) {
                 </div>
                 <div>
                   <p className="text-sm font-medium">Total Shoots</p>
-                  <Badge variant="secondary">{cluster.shoots.length}</Badge>
+                  <Badge variant="secondary">{cluster.shoots?.length ?? 0}</Badge>
                 </div>
               </div>
               {cluster.description && (
@@ -111,7 +110,7 @@ export default async function ViewClusterPage({ params }: PageProps) {
               <CardTitle>Shoots in this Cluster</CardTitle>
             </CardHeader>
             <CardContent>
-              {cluster.shoots.length === 0 ? (
+              {!cluster.shoots || cluster.shoots.length === 0 ? (
                 <div className="text-muted-foreground py-8 text-center">
                   <p>No shoots assigned to this cluster yet.</p>
                   <p className="text-sm">
@@ -132,12 +131,21 @@ export default async function ViewClusterPage({ params }: PageProps) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {cluster.shoots.map((shoot) => {
-                      const typedShoot = shoot as unknown as ShootWithCosts;
-                      const shootCost =
-                        (typedShoot.photographyCost ?? 0) +
-                        (typedShoot.travelCost ?? 0) +
-                        (typedShoot.editingCost ?? 0);
+                    {cluster.shoots.map((shoot: ShootInCluster) => {
+                      // For shift-based: shootCost + travelCost, for project-based: overallCost
+                      const workflowType = shoot.workflowType ?? "shift";
+                      const shootCost = typeof shoot.shootCost === "number" ? shoot.shootCost : 0;
+                      const travelCost = typeof shoot.travelCost === "number" ? shoot.travelCost : 0;
+                      const overallCost = typeof shoot.overallCost === "number" ? shoot.overallCost : 0;
+                      
+                      const shootTotalCost = workflowType === "project"
+                        ? overallCost
+                        : shootCost + travelCost;
+                      
+                      const scheduledDate = shoot.scheduledShootDate 
+                        ? new Date(shoot.scheduledShootDate as string | Date)
+                        : null;
+                      
                       return (
                         <TableRow key={shoot.id}>
                           <TableCell className="font-medium">
@@ -148,18 +156,15 @@ export default async function ViewClusterPage({ params }: PageProps) {
                               {shoot.shootId}
                             </Link>
                           </TableCell>
-                          <TableCell>{shoot.client.name}</TableCell>
+                          <TableCell>{shoot.client?.name ?? "N/A"}</TableCell>
                           <TableCell>
                             <Badge variant="outline">
-                              {shoot.shootType.name}
+                              {shoot.shootType?.name ?? "N/A"}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            {shoot.shootStartDate ? (
-                              format(
-                                new Date(shoot.shootStartDate),
-                                "MMM dd, yyyy",
-                              )
+                            {scheduledDate ? (
+                              format(scheduledDate, "MMM dd, yyyy")
                             ) : (
                               <span className="text-muted-foreground">
                                 Not set
@@ -170,7 +175,7 @@ export default async function ViewClusterPage({ params }: PageProps) {
                             <Badge>{shoot.status}</Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            ${shootCost.toFixed(2)}
+                            ₹{shootTotalCost.toFixed(2)}
                           </TableCell>
                         </TableRow>
                       );
@@ -192,7 +197,7 @@ export default async function ViewClusterPage({ params }: PageProps) {
               <div>
                 <p className="text-sm font-medium">Total Cluster Cost</p>
                 <p className="text-2xl font-bold">
-                  ${displayTotalCost.toFixed(2)}
+                  ₹{typeof displayTotalCost === "number" ? displayTotalCost.toFixed(2) : "0.00"}
                 </p>
                 {cluster.totalCost === null && (
                   <p className="text-muted-foreground text-xs">
@@ -202,7 +207,7 @@ export default async function ViewClusterPage({ params }: PageProps) {
               </div>
               <div>
                 <p className="text-sm font-medium">Number of Shoots</p>
-                <p className="text-lg">{cluster.shoots.length}</p>
+                <p className="text-lg">{cluster.shoots?.length ?? 0}</p>
               </div>
             </CardContent>
           </Card>

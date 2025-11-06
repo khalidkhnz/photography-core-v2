@@ -88,7 +88,8 @@ export async function getClusterById(id: string) {
             client: true,
             shootType: true,
             location: true,
-            teamMembers: {
+            dop: true,
+            executors: {
               include: {
                 user: true,
               },

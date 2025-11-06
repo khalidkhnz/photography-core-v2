@@ -14,6 +14,8 @@ async function main() {
         email: "admin@photography-core.com",
         name: "Admin User",
         password: hashedPassword,
+        phone: "+1-555-0001",
+        roles: ["admin"],
       },
     });
     console.log("✅ Created admin user:", adminUser.email);
@@ -44,35 +46,35 @@ async function main() {
 
   console.log("✅ Created shoot types");
 
-  // Create sample clients with full details
+  // Create sample clients with main POC details
   const clients = [
-    { 
-      name: "John Doe Photography",
-      email: "contact@johndoephotography.com",
-      phone: "+1-555-0100",
-      address: "123 Photography Lane, New York, NY 10001",
-      poc: "John Doe"
+    {
+      name: "ATS HomeKraft",
+      address: "123 Real Estate Blvd, Mumbai, Maharashtra 400001",
+      pocName: "Rajesh Kumar",
+      pocEmail: "rajesh.kumar@atshomekraft.com",
+      pocPhone: "+91-98765-43210",
     },
-    { 
-      name: "Jane Smith Studios",
-      email: "info@janesmithstudios.com",
-      phone: "+1-555-0101",
-      address: "456 Studio Street, New York, NY 10002",
-      poc: "Jane Smith"
+    {
+      name: "Prestige Estates",
+      address: "456 Prestige Tower, Bangalore, Karnataka 560001",
+      pocName: "Priya Sharma",
+      pocEmail: "priya.sharma@prestigeestates.com",
+      pocPhone: "+91-98765-43211",
     },
-    { 
-      name: "ABC Real Estate",
-      email: "contact@abcrealestate.com",
-      phone: "+1-555-0102",
-      address: "789 Real Estate Blvd, New York, NY 10003",
-      poc: "Robert Brown"
+    {
+      name: "DLF Limited",
+      address: "789 Corporate Ave, Gurgaon, Haryana 122001",
+      pocName: "Amit Verma",
+      pocEmail: "amit.verma@dlf.com",
+      pocPhone: "+91-98765-43212",
     },
-    { 
-      name: "XYZ Events",
-      email: "events@xyzevents.com",
-      phone: "+1-555-0103",
-      address: "321 Event Avenue, New York, NY 10004",
-      poc: "Tom Anderson"
+    {
+      name: "Godrej Properties",
+      address: "321 Godrej Complex, Pune, Maharashtra 411001",
+      pocName: "Sneha Patel",
+      pocEmail: "sneha.patel@godrejproperties.com",
+      pocPhone: "+91-98765-43213",
     },
   ];
 
@@ -82,37 +84,36 @@ async function main() {
         data: client,
       });
     } catch (error) {
-      // Client already exists, skip
       console.log(`Client ${client.name} already exists, skipping...`);
     }
   }
 
   console.log("✅ Created sample clients");
 
-  // Get created clients to assign entities, sites, and POCs
+  // Get created clients to assign entities and locations
   const createdClients = await prisma.client.findMany();
 
   // Create entities for clients
   const entityData = [
     {
-      name: "John Doe Photography LLC",
-      clientName: "John Doe Photography",
+      name: "ATS HomeKraft Pvt Ltd",
+      clientName: "ATS HomeKraft",
     },
     {
-      name: "Jane Smith Studios Inc",
-      clientName: "Jane Smith Studios",
+      name: "ATS Infrastructure Ltd",
+      clientName: "ATS HomeKraft",
     },
     {
-      name: "ABC Real Estate Group",
-      clientName: "ABC Real Estate",
+      name: "Prestige Estates Projects Ltd",
+      clientName: "Prestige Estates",
     },
     {
-      name: "ABC Real Estate Holdings",
-      clientName: "ABC Real Estate",
+      name: "DLF Homes Ltd",
+      clientName: "DLF Limited",
     },
     {
-      name: "XYZ Events Corporation",
-      clientName: "XYZ Events",
+      name: "Godrej Properties Ltd",
+      clientName: "Godrej Properties",
     },
   ];
 
@@ -127,7 +128,6 @@ async function main() {
           },
         });
       } catch (error) {
-        // Entity already exists, skip
         console.log(`Entity ${entity.name} already exists, skipping...`);
       }
     }
@@ -135,335 +135,220 @@ async function main() {
 
   console.log("✅ Created sample entities for clients");
 
-  // Get created entities to assign sites
-  const createdEntities = await prisma.entity.findMany();
-
-  // Create sites for entities
-  const siteData = [
+  // Create locations with POCs (independent of entities)
+  const locationData = [
     {
-      name: "Downtown Studio",
-      address: "123 Main St, New York, NY 10001",
-      entityName: "John Doe Photography LLC",
+      name: "Noida Sector 50 Project",
+      address: "Plot 123, Sector 50, Noida, Uttar Pradesh 201301",
+      city: "Noida",
+      state: "Uttar Pradesh",
+      country: "India",
+      clientName: "ATS HomeKraft",
+      pocs: [
+        {
+          name: "Vikram Singh",
+          email: "vikram.singh@atshomekraft.com",
+          phone: "+91-98765-43220",
+          role: "Site Manager",
+        },
+        {
+          name: "Anjali Gupta",
+          email: "anjali.gupta@atshomekraft.com",
+          phone: "+91-98765-43221",
+          role: "Project Coordinator",
+        },
+      ],
     },
     {
-      name: "Outdoor Garden Studio",
-      address: "456 Park Ave, New York, NY 10002",
-      entityName: "John Doe Photography LLC",
+      name: "Ghaziabad Township",
+      address: "NH-24, Ghaziabad, Uttar Pradesh 201001",
+      city: "Ghaziabad",
+      state: "Uttar Pradesh",
+      country: "India",
+      clientName: "ATS HomeKraft",
+      pocs: [
+        {
+          name: "Rohit Mehta",
+          email: "rohit.mehta@atshomekraft.com",
+          phone: "+91-98765-43222",
+          role: "Site Supervisor",
+        },
+      ],
     },
     {
-      name: "Corporate Office",
-      address: "789 Business Blvd, New York, NY 10003",
-      entityName: "Jane Smith Studios Inc",
+      name: "Whitefield Residential Complex",
+      address: "EPIP Zone, Whitefield, Bangalore, Karnataka 560066",
+      city: "Bangalore",
+      state: "Karnataka",
+      country: "India",
+      clientName: "Prestige Estates",
+      pocs: [
+        {
+          name: "Lakshmi Rao",
+          email: "lakshmi.rao@prestigeestates.com",
+          phone: "+91-98765-43223",
+          role: "Project Manager",
+        },
+        {
+          name: "Karthik Reddy",
+          email: "karthik.reddy@prestigeestates.com",
+          phone: "+91-98765-43224",
+          role: "Marketing Head",
+        },
+      ],
     },
     {
-      name: "Main Office",
-      address: "100 Corporate Dr, New York, NY 10004",
-      entityName: "ABC Real Estate Group",
+      name: "DLF Cyber City",
+      address: "DLF Cyber City, Gurgaon, Haryana 122002",
+      city: "Gurgaon",
+      state: "Haryana",
+      country: "India",
+      clientName: "DLF Limited",
+      pocs: [
+        {
+          name: "Manish Jain",
+          email: "manish.jain@dlf.com",
+          phone: "+91-98765-43225",
+          role: "Facility Manager",
+        },
+      ],
     },
     {
-      name: "Secondary Office",
-      address: "200 Business Ave, New York, NY 10005",
-      entityName: "ABC Real Estate Holdings",
-    },
-    {
-      name: "Event Hall",
-      address: "321 Event St, New York, NY 10006",
-      entityName: "XYZ Events Corporation",
-    },
-  ];
-
-  for (const site of siteData) {
-    const entity = createdEntities.find((e) => e.name === site.entityName);
-    if (entity) {
-      try {
-        await prisma.site.create({
-          data: {
-            name: site.name,
-            address: site.address,
-            entityId: entity.id,
-          },
-        });
-      } catch (error) {
-        // Site already exists, skip
-        console.log(`Site ${site.name} already exists, skipping...`);
-      }
-    }
-  }
-
-  console.log("✅ Created sample sites for entities");
-
-  // Get created sites to assign POCs
-  const createdSites = await prisma.site.findMany();
-
-  // Create POCs for sites
-  const pocData = [
-    {
-      name: "John Doe",
-      email: "john@johndoephotography.com",
-      phone: "+1-555-0123",
-      role: "Owner",
-      siteName: "Downtown Studio",
-    },
-    {
-      name: "Sarah Johnson",
-      email: "sarah@johndoephotography.com",
-      phone: "+1-555-0124",
-      role: "Studio Manager",
-      siteName: "Downtown Studio",
-    },
-    {
-      name: "Mike Wilson",
-      email: "mike@johndoephotography.com",
-      phone: "+1-555-0125",
-      role: "Photographer",
-      siteName: "Outdoor Garden Studio",
-    },
-    {
-      name: "Jane Smith",
-      email: "jane@janesmithstudios.com",
-      phone: "+1-555-0126",
-      role: "Creative Director",
-      siteName: "Corporate Office",
-    },
-    {
-      name: "Robert Brown",
-      email: "robert@abcrealestate.com",
-      phone: "+1-555-0127",
-      role: "Property Manager",
-      siteName: "Main Office",
-    },
-    {
-      name: "Lisa Davis",
-      email: "lisa@abcrealestate.com",
-      phone: "+1-555-0128",
-      role: "Sales Director",
-      siteName: "Secondary Office",
-    },
-    {
-      name: "Tom Anderson",
-      email: "tom@xyzevents.com",
-      phone: "+1-555-0129",
-      role: "Event Coordinator",
-      siteName: "Event Hall",
-    },
-    {
-      name: "Emma Wilson",
-      email: "emma@xyzevents.com",
-      phone: "+1-555-0130",
-      role: "Operations Manager",
-      siteName: "Event Hall",
+      name: "Godrej Garden City",
+      address: "Jagatpur Road, Ahmedabad, Gujarat 382470",
+      city: "Ahmedabad",
+      state: "Gujarat",
+      country: "India",
+      clientName: "Godrej Properties",
+      pocs: [
+        {
+          name: "Neha Desai",
+          email: "neha.desai@godrejproperties.com",
+          phone: "+91-98765-43226",
+          role: "Site Engineer",
+        },
+        {
+          name: "Ravi Shah",
+          email: "ravi.shah@godrejproperties.com",
+          phone: "+91-98765-43227",
+          role: "Sales Manager",
+        },
+      ],
     },
   ];
 
-  for (const poc of pocData) {
-    const site = createdSites.find((s) => s.name === poc.siteName);
-    if (site) {
+  for (const location of locationData) {
+    const client = createdClients.find((c) => c.name === location.clientName);
+    if (client) {
       try {
-        await prisma.pOC.create({
+        const createdLocation = await prisma.location.create({
           data: {
-            name: poc.name,
-            email: poc.email,
-            phone: poc.phone,
-            role: poc.role,
-            siteId: site.id,
-          },
-        });
-      } catch (error) {
-        // POC already exists, skip
-        console.log(`POC ${poc.name} already exists, skipping...`);
-      }
-    }
-  }
-
-  console.log("✅ Created sample POCs for sites");
-
-  // Get created data for shoots
-  const createdShootTypes = await prisma.shootType.findMany();
-  const createdPOCs = await prisma.pOC.findMany();
-
-  // Create sample shoots with hierarchical data
-  const shootData = [
-    {
-      shootId: "RE-2024-001",
-      clientName: "ABC Real Estate",
-      entityName: "ABC Real Estate Group",
-      siteName: "Main Office",
-      pocName: "Robert Brown",
-      shootTypeCode: "RE",
-      projectName: "Luxury Condo Marketing",
-      remarks: "High-end real estate photography for luxury condominium",
-      shootStartDate: new Date("2024-01-15T09:00:00Z"),
-      shootEndDate: new Date("2024-01-15T17:00:00Z"),
-      photographerNotes: "Focus on natural lighting and wide angles",
-      editorNotes: "Enhance colors and remove minor imperfections",
-      workflowType: "shift",
-      photographyCost: 500.00,
-      travelCost: 50.00,
-      editingCost: 200.00,
-    },
-    {
-      shootId: "DR-2024-002",
-      clientName: "John Doe Photography",
-      entityName: "John Doe Photography LLC",
-      siteName: "Downtown Studio",
-      pocName: "John Doe",
-      shootTypeCode: "DR",
-      projectName: "Aerial Property Survey",
-      remarks: "Drone photography for property assessment",
-      shootStartDate: new Date("2024-01-20T10:00:00Z"),
-      shootEndDate: new Date("2024-01-20T14:00:00Z"),
-      photographerNotes: "Weather conditions: Clear, light wind",
-      editorNotes: "Stitch aerial photos for panoramic view",
-      workflowType: "shift",
-      photographyCost: 800.00,
-      travelCost: 100.00,
-      editingCost: 300.00,
-    },
-    {
-      shootId: "EV-2024-003",
-      clientName: "XYZ Events",
-      entityName: "XYZ Events Corporation",
-      siteName: "Event Hall",
-      pocName: "Tom Anderson",
-      shootTypeCode: "EV",
-      projectName: "Corporate Gala",
-      remarks: "Full event coverage including ceremony and reception",
-      shootStartDate: new Date("2024-01-25T18:00:00Z"),
-      shootEndDate: new Date("2024-01-25T23:00:00Z"),
-      photographerNotes: "Multiple photographers needed for large event",
-      editorNotes: "Quick turnaround for social media posts",
-      workflowType: "shift",
-      photographyCost: 1200.00,
-      travelCost: 0.00,
-      editingCost: 400.00,
-    },
-    {
-      shootId: "VT-2024-004",
-      clientName: "ABC Real Estate",
-      entityName: "ABC Real Estate Holdings",
-      siteName: "Secondary Office",
-      pocName: "Lisa Davis",
-      shootTypeCode: "VT",
-      projectName: "Virtual Office Tour",
-      remarks: "360-degree virtual tour for remote viewing",
-      shootStartDate: new Date("2024-01-30T11:00:00Z"),
-      shootEndDate: new Date("2024-01-30T15:00:00Z"),
-      photographerNotes: "Use 360-degree camera equipment",
-      editorNotes: "Create interactive virtual tour",
-      workflowType: "project",
-      photographyCost: 600.00,
-      travelCost: 75.00,
-      editingCost: 500.00,
-    },
-  ];
-
-  for (const shoot of shootData) {
-    const client = createdClients.find((c) => c.name === shoot.clientName);
-    const entity = createdEntities.find((e) => e.name === shoot.entityName);
-    const site = createdSites.find((s) => s.name === shoot.siteName);
-    const poc = createdPOCs.find((p) => p.name === shoot.pocName);
-    const shootType = createdShootTypes.find((st) => st.code === shoot.shootTypeCode);
-
-    if (client && entity && site && poc && shootType) {
-      try {
-        await prisma.shoot.create({
-          data: {
-            shootId: shoot.shootId,
+            name: location.name,
+            address: location.address,
+            city: location.city,
+            state: location.state,
+            country: location.country,
             clientId: client.id,
-            entityId: entity.id,
-            siteId: site.id,
-            pocId: poc.id,
-            shootTypeId: shootType.id,
-            projectName: shoot.projectName,
-            remarks: shoot.remarks,
-            shootStartDate: shoot.shootStartDate,
-            shootEndDate: shoot.shootEndDate,
-            photographerNotes: shoot.photographerNotes,
-            editorNotes: shoot.editorNotes,
-            workflowType: shoot.workflowType,
-            photographyCost: shoot.photographyCost,
-            travelCost: shoot.travelCost,
-            editingCost: shoot.editingCost,
-            status: "planned",
           },
         });
+
+        // Create POCs for this location
+        for (const poc of location.pocs) {
+          await prisma.locationPOC.create({
+            data: {
+              name: poc.name,
+              email: poc.email,
+              phone: poc.phone,
+              role: poc.role,
+              locationId: createdLocation.id,
+            },
+          });
+        }
       } catch (error) {
-        console.log(`Shoot ${shoot.shootId} already exists, skipping...`);
+        console.log(`Location ${location.name} already exists, skipping...`);
       }
     }
   }
 
-  console.log("✅ Created sample shoots with hierarchical data");
+  console.log("✅ Created sample locations with POCs");
 
   // Create team members with different role combinations
   const teamMemberPassword = await bcrypt.hash("team123", 12);
 
   const teamMembers = [
-    // Pure Photographers
+    // Pure Photographers (DOPs)
     {
-      name: "Alice Johnson",
-      email: "alice@photography.com",
-      phone: "+1-555-0201",
+      name: "Arjun Kapoor",
+      email: "arjun.kapoor@photography.com",
+      phone: "+91-98765-43230",
       roles: ["photographer"],
-      specialties: ["Real Estate", "Portrait Photography"],
+      specialties: ["Real Estate", "Drone Photography"],
       rating: 4.5,
     },
     {
-      name: "Bob Wilson",
-      email: "bob@photography.com",
-      phone: "+1-555-0202",
+      name: "Meera Iyer",
+      email: "meera.iyer@photography.com",
+      phone: "+91-98765-43231",
       roles: ["photographer"],
-      specialties: ["Drone Photography", "Landscape"],
+      specialties: ["Real Estate", "Virtual Tours"],
       rating: 4.8,
     },
     {
-      name: "Carol Davis",
-      email: "carol@photography.com",
-      phone: "+1-555-0203",
+      name: "Sanjay Rao",
+      email: "sanjay.rao@photography.com",
+      phone: "+91-98765-43232",
       roles: ["photographer"],
-      specialties: ["Event Photography", "Wedding"],
+      specialties: ["Event", "Drone Photography"],
       rating: 4.3,
+    },
+    {
+      name: "Pooja Nair",
+      email: "pooja.nair@photography.com",
+      phone: "+91-98765-43233",
+      roles: ["photographer"],
+      specialties: ["Real Estate", "Event"],
+      rating: 4.6,
     },
     // Pure Editors
     {
-      name: "Eva Garcia",
-      email: "eva@editing.com",
-      phone: "+1-555-0301",
+      name: "Rahul Khanna",
+      email: "rahul.khanna@editing.com",
+      phone: "+91-98765-43240",
       roles: ["editor"],
-      specialties: ["Photo Editing", "Color Correction"],
+      specialties: ["Real Estate", "Virtual Tours"],
       rating: 4.6,
     },
     {
-      name: "Frank Miller",
-      email: "frank@editing.com",
-      phone: "+1-555-0302",
+      name: "Divya Menon",
+      email: "divya.menon@editing.com",
+      phone: "+91-98765-43241",
       roles: ["editor"],
-      specialties: ["Video Editing", "Motion Graphics"],
+      specialties: ["Real Estate", "Drone Photography"],
       rating: 4.7,
     },
     {
-      name: "Grace Lee",
-      email: "grace@editing.com",
-      phone: "+1-555-0303",
+      name: "Anil Varma",
+      email: "anil.varma@editing.com",
+      phone: "+91-98765-43242",
       roles: ["editor"],
-      specialties: ["Retouching", "Compositing"],
+      specialties: ["Event", "Podcasts"],
       rating: 4.4,
     },
-    // Multi-role (Photographer + Editor)
+    // Multi-role (Photographer + Editor) - Can be DOP and Editor
     {
-      name: "David Brown",
-      email: "david@photography.com",
-      phone: "+1-555-0204",
+      name: "Kabir Malhotra",
+      email: "kabir.malhotra@photography.com",
+      phone: "+91-98765-43250",
       roles: ["photographer", "editor"],
-      specialties: ["Virtual Tours", "Photo Editing", "Commercial Photography"],
+      specialties: ["Virtual Tours", "Real Estate"],
       rating: 4.9,
     },
     {
-      name: "Henry Chen",
-      email: "henry@editing.com",
-      phone: "+1-555-0304",
+      name: "Shreya Bhatt",
+      email: "shreya.bhatt@editing.com",
+      phone: "+91-98765-43251",
       roles: ["photographer", "editor"],
-      specialties: ["Podcast Production", "Audio Editing", "Videography"],
+      specialties: ["Podcasts", "Event"],
       rating: 4.5,
     },
   ];
@@ -490,6 +375,239 @@ async function main() {
   console.log(
     "✅ Created team members (photographers, editors, and multi-role)",
   );
+
+  // Get created data for shoots
+  const createdShootTypes = await prisma.shootType.findMany();
+  const createdEntities = await prisma.entity.findMany();
+  const createdLocations = await prisma.location.findMany();
+  const createdTeamMembers = await prisma.user.findMany({
+    where: {
+      roles: {
+        hasSome: ["photographer", "editor"],
+      },
+    },
+  });
+
+  // Create sample shoots with new structure
+  const shootData = [
+    {
+      shootId: "RE-2024-001",
+      clientName: "ATS HomeKraft",
+      entityName: "ATS HomeKraft Pvt Ltd",
+      locationName: "Noida Sector 50 Project",
+      shootTypeCode: "RE",
+      projectName: "Luxury Apartment Marketing Shoot",
+      remarks: "High-end real estate photography for premium apartments",
+      scheduledShootDate: new Date("2024-02-15T09:00:00Z"),
+      reportingTime: "09:00 AM",
+      wrapUpTime: "05:00 PM",
+      photographerNotes: "Focus on natural lighting, wide angles, and luxury amenities",
+      workflowType: "shift",
+      shootCost: 15000.0,
+      travelCost: 2000.0,
+      shootCostStatus: "paid",
+      travelCostStatus: "paid",
+      dopName: "Arjun Kapoor",
+      executorNames: ["Arjun Kapoor", "Meera Iyer"],
+    },
+    {
+      shootId: "DR-2024-002",
+      clientName: "ATS HomeKraft",
+      entityName: "ATS Infrastructure Ltd",
+      locationName: "Ghaziabad Township",
+      shootTypeCode: "DR",
+      projectName: "Aerial Construction Progress Documentation",
+      remarks: "Drone photography for quarterly construction updates",
+      scheduledShootDate: new Date("2024-02-20T10:00:00Z"),
+      reportingTime: "10:00 AM",
+      wrapUpTime: "02:00 PM",
+      photographerNotes: "Weather conditions must be clear, focus on overall site progress",
+      workflowType: "shift",
+      shootCost: 20000.0,
+      travelCost: 3000.0,
+      shootCostStatus: "unpaid",
+      travelCostStatus: "unpaid",
+      dopName: "Sanjay Rao",
+      executorNames: ["Sanjay Rao"],
+    },
+    {
+      shootId: "VT-2024-003",
+      clientName: "Prestige Estates",
+      entityName: "Prestige Estates Projects Ltd",
+      locationName: "Whitefield Residential Complex",
+      shootTypeCode: "VT",
+      projectName: "360° Virtual Property Tour",
+      remarks: "Complete virtual tour for online property viewing",
+      scheduledShootDate: new Date("2024-02-25T11:00:00Z"),
+      reportingTime: "11:00 AM",
+      wrapUpTime: "04:00 PM",
+      photographerNotes: "Use 360-degree camera, cover all rooms and common areas",
+      workflowType: "project",
+      overallCost: 50000.0,
+      overallCostStatus: "onhold",
+      dopName: "Kabir Malhotra",
+      executorNames: ["Kabir Malhotra"],
+    },
+    {
+      shootId: "EV-2024-004",
+      clientName: "Godrej Properties",
+      entityName: "Godrej Properties Ltd",
+      locationName: "Godrej Garden City",
+      shootTypeCode: "EV",
+      projectName: "Property Launch Event Coverage",
+      remarks: "Full event coverage including ceremony, speeches, and networking",
+      scheduledShootDate: new Date("2024-03-01T06:00:00Z"),
+      reportingTime: "06:00 PM",
+      wrapUpTime: "11:00 PM",
+      photographerNotes: "Multiple photographers needed, capture key moments and VIP guests",
+      workflowType: "shift",
+      shootCost: 25000.0,
+      travelCost: 1500.0,
+      shootCostStatus: "paid",
+      travelCostStatus: "paid",
+      dopName: "Pooja Nair",
+      executorNames: ["Pooja Nair", "Sanjay Rao"],
+    },
+  ];
+
+  for (const shoot of shootData) {
+    const client = createdClients.find((c) => c.name === shoot.clientName);
+    const entity = createdEntities.find((e) => e.name === shoot.entityName);
+    const location = createdLocations.find((l) => l.name === shoot.locationName);
+    const shootType = createdShootTypes.find((st) => st.code === shoot.shootTypeCode);
+    const dop = createdTeamMembers.find((tm) => tm.name === shoot.dopName);
+
+    if (client && entity && location && shootType && dop) {
+      try {
+        const createdShoot = await prisma.shoot.create({
+          data: {
+            shootId: shoot.shootId,
+            clientId: client.id,
+            entityId: entity.id,
+            locationId: location.id,
+            shootTypeId: shootType.id,
+            projectName: shoot.projectName,
+            remarks: shoot.remarks,
+            scheduledShootDate: shoot.scheduledShootDate,
+            reportingTime: shoot.reportingTime,
+            wrapUpTime: shoot.wrapUpTime,
+            photographerNotes: shoot.photographerNotes,
+            workflowType: shoot.workflowType,
+            shootCost: shoot.shootCost,
+            travelCost: shoot.travelCost,
+            shootCostStatus: shoot.shootCostStatus,
+            travelCostStatus: shoot.travelCostStatus,
+            overallCost: shoot.overallCost,
+            overallCostStatus: shoot.overallCostStatus,
+            dopId: dop.id,
+            status: "planned",
+          },
+        });
+
+        // Add executors
+        for (const executorName of shoot.executorNames) {
+          const executor = createdTeamMembers.find((tm) => tm.name === executorName);
+          if (executor) {
+            await prisma.shootExecutor.create({
+              data: {
+                shootId: createdShoot.id,
+                userId: executor.id,
+              },
+            });
+          }
+        }
+      } catch (error) {
+        console.log(`Shoot ${shoot.shootId} already exists, skipping...`);
+      }
+    }
+  }
+
+  console.log("✅ Created sample shoots with new structure");
+
+  // Create sample edits linked to shoots
+  const editData = [
+    {
+      editId: "EDIT-2024-001",
+      shootId: "RE-2024-001",
+      deliverables: "20 edited photos, color graded, retouched",
+      editDeliveryDate: new Date("2024-02-20T00:00:00Z"),
+      editorNotes: "Enhance colors, remove minor imperfections, apply luxury filter",
+      editCost: 5000.0,
+      editCostStatus: "paid",
+      editorNames: ["Rahul Khanna", "Divya Menon"],
+    },
+    {
+      editId: "EDIT-2024-002",
+      shootId: "DR-2024-002",
+      deliverables: "Panoramic stitching, 10 edited aerial shots",
+      editDeliveryDate: new Date("2024-02-25T00:00:00Z"),
+      editorNotes: "Stitch aerial photos for panoramic view, color correction",
+      editCost: 8000.0,
+      editCostStatus: "unpaid",
+      editorNames: ["Divya Menon"],
+    },
+    {
+      editId: "EDIT-2024-003",
+      shootId: "EV-2024-004",
+      deliverables: "50 event photos, quick turnaround for social media",
+      editDeliveryDate: new Date("2024-03-03T00:00:00Z"),
+      editorNotes: "Quick turnaround for social media posts, basic color grading",
+      editCost: 6000.0,
+      editCostStatus: "paid",
+      editorNames: ["Anil Varma"],
+    },
+    {
+      editId: "EDIT-2024-004",
+      shootId: null, // Independent edit (edit-only order)
+      deliverables: "Video editing for promotional content",
+      editDeliveryDate: new Date("2024-03-10T00:00:00Z"),
+      editorNotes: "Edit existing footage into 2-minute promotional video",
+      editCost: 10000.0,
+      editCostStatus: "onhold",
+      editorNames: ["Anil Varma", "Shreya Bhatt"],
+    },
+  ];
+
+  for (const edit of editData) {
+    let shoot = null;
+    if (edit.shootId) {
+      shoot = await prisma.shoot.findUnique({
+        where: { shootId: edit.shootId },
+      });
+    }
+
+    try {
+      const createdEdit = await prisma.edit.create({
+        data: {
+          editId: edit.editId,
+          shootId: shoot?.id,
+          deliverables: edit.deliverables,
+          editDeliveryDate: edit.editDeliveryDate,
+          editorNotes: edit.editorNotes,
+          editCost: edit.editCost,
+          editCostStatus: edit.editCostStatus,
+          status: "pending",
+        },
+      });
+
+      // Add editors
+      for (const editorName of edit.editorNames) {
+        const editor = createdTeamMembers.find((tm) => tm.name === editorName);
+        if (editor) {
+          await prisma.editEditor.create({
+            data: {
+              editId: createdEdit.id,
+              userId: editor.id,
+            },
+          });
+        }
+      }
+    } catch (error) {
+      console.log(`Edit ${edit.editId} already exists, skipping...`);
+    }
+  }
+
+  console.log("✅ Created sample edits with team assignments");
 
   console.log("🎉 Seed completed successfully!");
 }

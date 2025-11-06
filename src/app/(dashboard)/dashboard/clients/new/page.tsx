@@ -31,10 +31,10 @@ import { toast } from "sonner";
 
 const createClientSchema = z.object({
   name: z.string().min(1, "Client name is required"),
-  email: z.string().email("Invalid email address").optional().or(z.literal("")),
-  phone: z.string().optional(),
   address: z.string().optional(),
-  poc: z.string().optional(),
+  pocName: z.string().optional(),
+  pocEmail: z.string().email("Invalid email address").optional().or(z.literal("")),
+  pocPhone: z.string().optional(),
 });
 
 type CreateClientFormData = z.infer<typeof createClientSchema>;
@@ -48,10 +48,10 @@ export default function CreateClientPage() {
     resolver: zodResolver(createClientSchema),
     defaultValues: {
       name: "",
-      email: "",
-      phone: "",
       address: "",
-      poc: "",
+      pocName: "",
+      pocEmail: "",
+      pocPhone: "",
     },
   });
 
@@ -63,10 +63,10 @@ export default function CreateClientPage() {
       // Convert the form data to FormData for the server action
       const formData = new FormData();
       formData.append("name", data.name);
-      if (data.email) formData.append("email", data.email);
-      if (data.phone) formData.append("phone", data.phone);
       if (data.address) formData.append("address", data.address);
-      if (data.poc) formData.append("poc", data.poc);
+      if (data.pocName) formData.append("pocName", data.pocName);
+      if (data.pocEmail) formData.append("pocEmail", data.pocEmail);
+      if (data.pocPhone) formData.append("pocPhone", data.pocPhone);
 
       await createClient(formData);
       toast.success("Client created successfully!");
@@ -117,39 +117,7 @@ export default function CreateClientPage() {
                   <FormItem>
                     <FormLabel>Client Name *</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., John Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="e.g., john@example.com"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., +1-555-0123" {...field} />
+                      <Input placeholder="e.g., ATS HomeKraft" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -164,7 +132,49 @@ export default function CreateClientPage() {
                     <FormLabel>Address</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="e.g., 123 Main St, City, State"
+                        placeholder="e.g., 123 Main St, Mumbai, Maharashtra"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Main Point of Contact (Client Side)</CardTitle>
+              <CardDescription>
+                Primary contact person from the client&apos;s organization
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="pocName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>POC Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Rajesh Kumar" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="pocEmail"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>POC Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="e.g., rajesh@atshomekraft.com"
                         {...field}
                       />
                     </FormControl>
@@ -175,12 +185,12 @@ export default function CreateClientPage() {
 
               <FormField
                 control={form.control}
-                name="poc"
+                name="pocPhone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Point of Contact</FormLabel>
+                    <FormLabel>POC Phone</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Jane Smith" {...field} />
+                      <Input placeholder="e.g., +91 98765 43210" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
