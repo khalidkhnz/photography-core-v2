@@ -96,6 +96,21 @@ export async function getClusterById(id: string) {
             },
           },
         },
+        edits: {
+          include: {
+            shoot: {
+              include: {
+                client: true,
+                shootType: true,
+              },
+            },
+            editors: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
       },
     });
 

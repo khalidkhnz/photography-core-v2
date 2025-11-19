@@ -73,6 +73,7 @@ export const updateShootSchema = z.object({
 export const createEditSchema = z.object({
   editId: z.string().min(1, "Edit ID is required"),
   shootId: z.string().optional(), // Can be linked to shoot or exist independently
+  clusterId: z.string().optional(), // Can be linked to cluster
   deliverables: z.string().optional(),
   editDeliveryDate: z.string().optional(),
   editorNotes: z.string().optional(),
@@ -84,6 +85,7 @@ export const createEditSchema = z.object({
 export const updateEditSchema = z.object({
   editId: z.string().min(1, "Edit ID is required"),
   shootId: z.string().nullable().optional(),
+  clusterId: z.string().nullable().optional(),
   deliverables: z.string().optional(),
   editDeliveryDate: z.string().optional(),
   editorNotes: z.string().optional(),

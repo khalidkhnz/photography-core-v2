@@ -68,6 +68,7 @@ export async function createEdit(formData: FormData) {
     const rawData: CreateEditFormData = {
       editId: (formData.get("editId") as string)?.trim() || "",
       shootId: (formData.get("shootId") as string) || undefined,
+      clusterId: (formData.get("clusterId") as string) || undefined,
       deliverables: (formData.get("deliverables") as string) || undefined,
       editDeliveryDate: (formData.get("editDeliveryDate") as string) || undefined,
       editorNotes: (formData.get("editorNotes") as string) || undefined,
@@ -96,6 +97,7 @@ export async function createEdit(formData: FormData) {
       data: {
         editId: validatedData.editId,
         shootId: validatedData.shootId,
+        clusterId: validatedData.clusterId,
         deliverables: validatedData.deliverables,
         editDeliveryDate: validatedData.editDeliveryDate
           ? new Date(validatedData.editDeliveryDate)
@@ -168,6 +170,7 @@ export async function updateEdit(id: string, formData: FormData) {
     const rawData: UpdateEditFormData = {
       editId: (formData.get("editId") as string)?.trim() || "",
       shootId: (formData.get("shootId") as string) || undefined,
+      clusterId: (formData.get("clusterId") as string) || undefined,
       deliverables: (formData.get("deliverables") as string) || undefined,
       editDeliveryDate: (formData.get("editDeliveryDate") as string) || undefined,
       editorNotes: (formData.get("editorNotes") as string) || undefined,
@@ -201,6 +204,7 @@ export async function updateEdit(id: string, formData: FormData) {
       data: {
         editId: validatedData.editId,
         shootId: validatedData.shootId,
+        clusterId: validatedData.clusterId,
         deliverables: validatedData.deliverables,
         editDeliveryDate: validatedData.editDeliveryDate
           ? new Date(validatedData.editDeliveryDate)
@@ -281,6 +285,7 @@ export async function getEditById(id: string) {
             location: true,
           },
         },
+        cluster: true,
         editors: {
           include: {
             user: true,

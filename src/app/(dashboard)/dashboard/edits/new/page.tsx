@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createEdit, generateEditIdAction } from "@/server/actions/edit-actions";
 import { getShoots } from "@/server/actions/shoot-actions";
 import { getTeamMembers } from "@/server/actions/user-actions";
+import { getClusters } from "@/server/actions/cluster-actions";
 import {
   createEditSchema,
   type CreateEditFormData,
@@ -60,10 +61,17 @@ interface TeamMember {
   isActive: boolean;
 }
 
+interface Cluster {
+  id: string;
+  name: string;
+  description?: string | null;
+}
+
 export default function CreateEditPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [shoots, setShoots] = useState<Shoot[]>([]);
+  const [clusters, setClusters] = useState<Cluster[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const router = useRouter();
@@ -73,6 +81,7 @@ export default function CreateEditPage() {
     defaultValues: {
       editId: "",
       shootId: "",
+      clusterId: "",
       deliverables: "",
       editDeliveryDate: "",
       editorNotes: "",
@@ -86,12 +95,14 @@ export default function CreateEditPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [shootsData, teamMembersData] = await Promise.all([
+        const [shootsData, clustersData, teamMembersData] = await Promise.all([
           getShoots(),
+          getClusters(),
           getTeamMembers(["editor"]),
         ]);
 
         setShoots(shootsData);
+        setClusters(clustersData);
         setTeamMembers(teamMembersData);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -120,6 +131,7 @@ export default function CreateEditPage() {
       const formData = new FormData();
       formData.append("editId", data.editId.trim());
       if (data.shootId) formData.append("shootId", data.shootId);
+      if (data.clusterId) formData.append("clusterId", data.clusterId);
       if (data.deliverables) formData.append("deliverables", data.deliverables);
       if (data.editDeliveryDate) formData.append("editDeliveryDate", data.editDeliveryDate);
       if (data.editorNotes) formData.append("editorNotes", data.editorNotes);
@@ -264,6 +276,41 @@ export default function CreateEditPage() {
                         </Select>
                         <FormDescription>
                           Link this edit to a shoot, or leave blank for independent edits
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="clusterId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Linked Cluster (Optional)</FormLabel>
+                        <Select
+                          onValueChange={(value) => {
+                            // Convert "none" to empty string for form state
+                            field.onChange(value === "none" ? "" : value);
+                          }}
+                          value={field.value ?? "none"}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a cluster to link (optional)" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">No cluster</SelectItem>
+                            {clusters.map((cluster) => (
+                              <SelectItem key={cluster.id} value={cluster.id}>
+                                {cluster.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Link this edit to a cluster for grouped tracking
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

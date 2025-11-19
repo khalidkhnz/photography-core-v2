@@ -114,6 +114,7 @@ model Cluster {
     updatedAt       DateTime @updatedAt
 
     shoots          Shoot[]  // All shoots in this cluster
+    edits           Edit[]   // Edits can also be linked to clusters
 
     @@index([name])
     @@index([clientId])
@@ -199,6 +200,7 @@ model Edit {
     id                 String   @id @default(cuid())
     editId             String   @unique // Custom edit ID
     shootId            String?  // Can be linked to shoot or exist independently
+    clusterId          String?  // Can be linked to cluster
     deliverables       String?  // Free text for overall deliverables
     editDeliveryDate   DateTime? // Delivery date for the edit
     editorNotes        String?
@@ -212,10 +214,12 @@ model Edit {
     updatedAt          DateTime @updatedAt
 
     shoot              Shoot?   @relation(fields: [shootId], references: [id], onDelete: SetNull)
+    cluster            Cluster? @relation(fields: [clusterId], references: [id], onDelete: SetNull)
     editors            EditEditor[] // Team assigned to this edit
 
     @@index([editId])
     @@index([shootId])
+    @@index([clusterId])
     @@index([status])
     @@index([editDeliveryDate])
 }

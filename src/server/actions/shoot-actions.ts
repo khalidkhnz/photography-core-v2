@@ -168,10 +168,10 @@ export async function createShoot(formData: FormData) {
 
     // Link to existing Edit IDs if provided
     if (validatedData.editIds && validatedData.editIds.length > 0) {
-      // Update edits to link to this shoot
+      // Update edits to link to this shoot using database IDs
       await db.edit.updateMany({
         where: {
-          editId: {
+          id: {
             in: validatedData.editIds,
           },
         },
@@ -344,11 +344,11 @@ export async function updateShoot(id: string, formData: FormData) {
       data: { shootId: null },
     });
 
-    // Then link the specified edits
+    // Then link the specified edits using database IDs
     if (validatedData.editIds && validatedData.editIds.length > 0) {
       await db.edit.updateMany({
         where: {
-          editId: {
+          id: {
             in: validatedData.editIds,
           },
         },

@@ -137,7 +137,7 @@ export function ClustersGrid({ clusters }: ClustersGridProps) {
                   <div className="flex items-center space-x-1">
                     <DollarSign className="h-4 w-4" />
                     <span className="text-sm font-semibold">
-                      ${cluster?.totalCost?.toFixed(2) ?? 0.0}
+                      ₹{cluster?.totalCost?.toFixed(2) ?? 0.0}
                     </span>
                   </div>
                 )}

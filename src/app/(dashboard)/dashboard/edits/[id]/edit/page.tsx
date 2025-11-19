@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { updateEdit, getEditById } from "@/server/actions/edit-actions";
 import { getShoots } from "@/server/actions/shoot-actions";
 import { getTeamMembers } from "@/server/actions/user-actions";
+import { getClusters } from "@/server/actions/cluster-actions";
 import {
   updateEditSchema,
   type UpdateEditFormData,
@@ -60,12 +61,19 @@ interface TeamMember {
   isActive: boolean;
 }
 
+interface Cluster {
+  id: string;
+  name: string;
+  description?: string | null;
+}
+
 
 export default function EditEditPage() {
   const { id } = useParams();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [shoots, setShoots] = useState<Shoot[]>([]);
+  const [clusters, setClusters] = useState<Cluster[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [editId] = useState<string>(id as string ?? "");
@@ -76,6 +84,7 @@ export default function EditEditPage() {
     defaultValues: {
       editId: "",
       shootId: "",
+      clusterId: "",
       deliverables: "",
       editDeliveryDate: "",
       editorNotes: "",
@@ -92,9 +101,10 @@ export default function EditEditPage() {
 
     async function fetchData() {
       try {
-        const [editData, shootsData, teamMembersData] = await Promise.all([
+        const [editData, shootsData, clustersData, teamMembersData] = await Promise.all([
           getEditById(editId),
           getShoots(),
+          getClusters(),
           getTeamMembers(["editor"]),
         ]);
 
@@ -108,6 +118,7 @@ export default function EditEditPage() {
         form.reset({
           editId: editData.editId,
           shootId: editData.shootId ?? "",
+          clusterId: editData.clusterId ?? "",
           deliverables: editData.deliverables ?? "",
           editDeliveryDate: editData.editDeliveryDate
             ? new Date(editData.editDeliveryDate).toISOString().split("T")[0]
@@ -119,6 +130,7 @@ export default function EditEditPage() {
         });
 
         setShoots(shootsData);
+        setClusters(clustersData);
         setTeamMembers(teamMembersData);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -148,6 +160,7 @@ export default function EditEditPage() {
       const formData = new FormData();
       formData.append("editId", data.editId.trim());
       if (data.shootId) formData.append("shootId", data.shootId);
+      if (data.clusterId) formData.append("clusterId", data.clusterId);
       if (data.deliverables) formData.append("deliverables", data.deliverables);
       if (data.editDeliveryDate) formData.append("editDeliveryDate", data.editDeliveryDate);
       if (data.editorNotes) formData.append("editorNotes", data.editorNotes);
@@ -264,6 +277,41 @@ export default function EditEditPage() {
                         </Select>
                         <FormDescription>
                           Link this edit to a shoot, or leave blank for independent edits
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="clusterId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Linked Cluster (Optional)</FormLabel>
+                        <Select
+                          onValueChange={(value) => {
+                            // Convert "none" to empty string for form state
+                            field.onChange(value === "none" ? "" : value);
+                          }}
+                          value={field.value ?? "none"}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a cluster to link (optional)" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">No cluster</SelectItem>
+                            {clusters.map((cluster) => (
+                              <SelectItem key={cluster.id} value={cluster.id}>
+                                {cluster.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Link this edit to a cluster for grouped tracking
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
