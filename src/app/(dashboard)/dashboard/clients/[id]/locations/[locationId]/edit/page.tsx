@@ -11,3 +11,4 @@ export default async function ClientLocationEditRedirect({ params }: PageProps) 
   redirect(`/dashboard/locations/${locationId}/edit`);
 }
 
+
