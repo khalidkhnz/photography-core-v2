@@ -96,10 +96,10 @@ export async function createShoot(formData: FormData) {
       // Cost tracking fields
       shootCost: (formData.get("shootCost") as string) || undefined,
       travelCost: (formData.get("travelCost") as string) || undefined,
-      shootCostStatus: (formData.get("shootCostStatus") as "paid" | "unpaid" | "onhold") || undefined,
-      travelCostStatus: (formData.get("travelCostStatus") as "paid" | "unpaid" | "onhold") || undefined,
+      shootCostStatus: formData.get("shootCostStatus") ? (formData.get("shootCostStatus") as "paid" | "unpaid" | "onhold") : undefined,
+      travelCostStatus: formData.get("travelCostStatus") ? (formData.get("travelCostStatus") as "paid" | "unpaid" | "onhold") : undefined,
       overallCost: (formData.get("overallCost") as string) || undefined,
-      overallCostStatus: (formData.get("overallCostStatus") as "paid" | "unpaid" | "onhold") || undefined,
+      overallCostStatus: formData.get("overallCostStatus") ? (formData.get("overallCostStatus") as "paid" | "unpaid" | "onhold") : undefined,
       clusterCostOverride: (formData.get("clusterCostOverride") as string) || undefined,
       
       // DOP and Executors
@@ -265,10 +265,10 @@ export async function updateShoot(id: string, formData: FormData) {
       
       shootCost: (formData.get("shootCost") as string) || undefined,
       travelCost: (formData.get("travelCost") as string) || undefined,
-      shootCostStatus: (formData.get("shootCostStatus") as "paid" | "unpaid" | "onhold") || undefined,
-      travelCostStatus: (formData.get("travelCostStatus") as "paid" | "unpaid" | "onhold") || undefined,
+      shootCostStatus: formData.get("shootCostStatus") ? (formData.get("shootCostStatus") as "paid" | "unpaid" | "onhold") : undefined,
+      travelCostStatus: formData.get("travelCostStatus") ? (formData.get("travelCostStatus") as "paid" | "unpaid" | "onhold") : undefined,
       overallCost: (formData.get("overallCost") as string) || undefined,
-      overallCostStatus: (formData.get("overallCostStatus") as "paid" | "unpaid" | "onhold") || undefined,
+      overallCostStatus: formData.get("overallCostStatus") ? (formData.get("overallCostStatus") as "paid" | "unpaid" | "onhold") : undefined,
       clusterCostOverride: (formData.get("clusterCostOverride") as string) || undefined,
       
       dopId: (formData.get("dopId") as string) || undefined,
@@ -367,9 +367,20 @@ export async function updateShoot(id: string, formData: FormData) {
     revalidatePath("/dashboard/shoots");
     revalidatePath(`/dashboard/shoots/${id}`);
     await refreshDashboardData();
+
+    return { success: true };
   } catch (error) {
     console.error("Error updating shoot:", error);
-    throw new Error(error instanceof Error ? error.message : "Failed to update shoot");
+    
+    // Handle unique constraint violation
+    if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
+      return { success: false, error: "Shoot ID already exists. Please choose a different ID." };
+    }
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update shoot",
+    };
   }
 }
 

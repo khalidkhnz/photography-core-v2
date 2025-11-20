@@ -39,37 +39,37 @@ export const createShootSchema = z.object({
 export const updateShootSchema = z.object({
   shootId: z.string().min(1, "Shoot ID is required"),
   clientId: z.string().min(1, "Client is required"),
-  entityId: z.string().nullable().optional(),
-  locationId: z.string().nullable().optional(),
-  clusterId: z.string().nullable().optional(),
+  entityId: z.string().optional().nullable().or(z.literal("")),
+  locationId: z.string().optional().nullable().or(z.literal("")),
+  clusterId: z.string().optional().nullable().or(z.literal("")),
   shootTypeId: z.string().min(1, "Shoot type is required"),
-  projectName: z.string().optional(),
-  remarks: z.string().optional(),
-  overallDeliverables: z.string().optional(),
+  projectName: z.string().optional().or(z.literal("")),
+  remarks: z.string().optional().or(z.literal("")),
+  overallDeliverables: z.string().optional().or(z.literal("")),
   
   // Date/Time fields
-  scheduledShootDate: z.string().optional(),
-  reportingTime: z.string().optional(),
-  wrapUpTime: z.string().optional(),
+  scheduledShootDate: z.string().optional().or(z.literal("")),
+  reportingTime: z.string().optional().or(z.literal("")),
+  wrapUpTime: z.string().optional().or(z.literal("")),
   
-  photographerNotes: z.string().optional(),
+  photographerNotes: z.string().optional().or(z.literal("")),
   workflowType: z.enum(["shift", "project", "cluster"]).optional(),
   
   // Cost tracking fields
-  shootCost: z.string().optional(),
-  travelCost: z.string().optional(),
-  shootCostStatus: z.enum(["paid", "unpaid", "onhold"]).optional(),
-  travelCostStatus: z.enum(["paid", "unpaid", "onhold"]).optional(),
-  overallCost: z.string().optional(),
-  overallCostStatus: z.enum(["paid", "unpaid", "onhold"]).optional(),
-  clusterCostOverride: z.string().optional(),
+  shootCost: z.string().optional().or(z.literal("")),
+  travelCost: z.string().optional().or(z.literal("")),
+  shootCostStatus: z.enum(["paid", "unpaid", "onhold"]).optional().nullable(),
+  travelCostStatus: z.enum(["paid", "unpaid", "onhold"]).optional().nullable(),
+  overallCost: z.string().optional().or(z.literal("")),
+  overallCostStatus: z.enum(["paid", "unpaid", "onhold"]).optional().nullable(),
+  clusterCostOverride: z.string().optional().or(z.literal("")),
   
   // DOP and Executors
-  dopId: z.string().optional(),
-  executorIds: z.array(z.string()).optional(),
+  dopId: z.string().optional().or(z.literal("")),
+  executorIds: z.array(z.string()).optional().default([]),
   
   // Edit IDs
-  editIds: z.array(z.string()).optional(),
+  editIds: z.array(z.string()).optional().default([]),
 });
 
 export const createEditSchema = z.object({

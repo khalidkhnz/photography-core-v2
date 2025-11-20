@@ -299,6 +299,7 @@ export default function EditShootPage() {
   }, [selectedReportingTime, form]);
 
   const onSubmit = async (data: UpdateShootFormData) => {
+    console.log("Form submitted with data:", data);
     setIsLoading(true);
     setError("");
 
@@ -357,9 +358,15 @@ export default function EditShootPage() {
         });
       }
 
-      await updateShoot(shootId, formData);
-      toast.success("Shoot updated successfully!");
-      router.push(`/dashboard/shoots/${shootId}`);
+      const result = await updateShoot(shootId, formData);
+
+      if (result.success) {
+        toast.success("Shoot updated successfully!");
+        router.push(`/dashboard/shoots/${shootId}`);
+      } else {
+        toast.error(result.error ?? "Failed to update shoot");
+        setError(result.error ?? "Failed to update shoot");
+      }
     } catch (err) {
       console.error("Error updating shoot:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to update shoot";
@@ -404,7 +411,45 @@ export default function EditShootPage() {
       )}
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
+          console.error("Form validation errors:", errors);
+          
+          // Show specific field errors
+          const errorMessages = Object.entries(errors)
+            .map(([field, error]) => {
+              const fieldName = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+              return `${fieldName}: ${error?.message || 'Invalid value'}`;
+            })
+            .join('\n');
+          
+          if (errorMessages) {
+            toast.error(`Please fix the following errors:\n${errorMessages}`, {
+              duration: 5000,
+            });
+            setError(`Validation failed: ${Object.keys(errors).join(', ')}`);
+          } else {
+            toast.error("Please check all required fields");
+          }
+        })} className="space-y-6">
+          {/* Validation Errors Display */}
+          {Object.keys(form.formState.errors).length > 0 && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                <div className="font-semibold mb-2">Please fix the following errors:</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {Object.entries(form.formState.errors).map(([field, error]) => {
+                    const fieldName = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                    return (
+                      <li key={field}>
+                        <strong>{fieldName}:</strong> {error?.message || 'This field is invalid'}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Basic Information */}
           <Card>
             <CardHeader>
@@ -419,7 +464,7 @@ export default function EditShootPage() {
                 name="shootId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Shoot ID</FormLabel>
+                    <FormLabel>Shoot ID *</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g., RE-2024-001" {...field} />
                     </FormControl>
@@ -433,7 +478,7 @@ export default function EditShootPage() {
                 name="clientId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Client</FormLabel>
+                    <FormLabel>Client *</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -492,7 +537,7 @@ export default function EditShootPage() {
                 name="shootTypeId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Shoot Type</FormLabel>
+                    <FormLabel>Shoot Type *</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
