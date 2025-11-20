@@ -28,7 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Layers, DollarSign, MoreHorizontal, Edit } from "lucide-react";
+import { Layers, IndianRupee, MoreHorizontal, Edit } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 
@@ -135,9 +135,9 @@ export function ClustersGrid({ clusters }: ClustersGridProps) {
                 </div>
                 {cluster.totalCost !== null && (
                   <div className="flex items-center space-x-1">
-                    <DollarSign className="h-4 w-4" />
+                    <IndianRupee className="h-4 w-4" />
                     <span className="text-sm font-semibold">
-                      ₹{cluster?.totalCost?.toFixed(2) ?? 0.0}
+                      {cluster?.totalCost?.toFixed(2) ?? 0.0}
                     </span>
                   </div>
                 )}

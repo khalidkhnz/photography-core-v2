@@ -91,7 +91,7 @@ export default async function EditDetailPage({ params }: EditDetailPageProps) {
               {edit.shoot ? (
                 <div className="mt-1">
                   <Link
-                    href={`/dashboard/shoots/${edit.shoot.shootId}`}
+                    href={`/dashboard/shoots/${edit.shoot.id}`}
                     className="text-blue-600 hover:underline font-medium"
                   >
                     {edit.shoot.shootId}

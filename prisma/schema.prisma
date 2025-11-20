@@ -149,6 +149,7 @@ model Shoot {
     travelCostStatus      String?   // paid, unpaid, onhold
     overallCost           Float?    // For project-level shoots (no bifurcation)
     overallCostStatus     String?   // For project-level shoots
+    clusterCostOverride   Float?    // Manual cost override for cluster shoots (overrides auto-calc)
     
     // DOP and Executors
     dopId                 String?   // Director of Photography (single, main POC)

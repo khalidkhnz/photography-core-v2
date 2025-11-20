@@ -100,6 +100,7 @@ export async function createShoot(formData: FormData) {
       travelCostStatus: (formData.get("travelCostStatus") as "paid" | "unpaid" | "onhold") || undefined,
       overallCost: (formData.get("overallCost") as string) || undefined,
       overallCostStatus: (formData.get("overallCostStatus") as "paid" | "unpaid" | "onhold") || undefined,
+      clusterCostOverride: (formData.get("clusterCostOverride") as string) || undefined,
       
       // DOP and Executors
       dopId: (formData.get("dopId") as string) || undefined,
@@ -125,6 +126,7 @@ export async function createShoot(formData: FormData) {
     const shootCostFloat = validatedData.shootCost ? parseFloat(validatedData.shootCost) : undefined;
     const travelCostFloat = validatedData.travelCost ? parseFloat(validatedData.travelCost) : undefined;
     const overallCostFloat = validatedData.overallCost ? parseFloat(validatedData.overallCost) : undefined;
+    const clusterCostOverrideFloat = validatedData.clusterCostOverride ? parseFloat(validatedData.clusterCostOverride) : undefined;
 
     // Create the shoot
     const shoot = await db.shoot.create({
@@ -151,6 +153,7 @@ export async function createShoot(formData: FormData) {
         travelCostStatus: validatedData.travelCostStatus,
         overallCost: overallCostFloat,
         overallCostStatus: validatedData.overallCostStatus,
+        clusterCostOverride: clusterCostOverrideFloat,
         dopId: validatedData.dopId,
         status: "planned",
       },
@@ -266,6 +269,7 @@ export async function updateShoot(id: string, formData: FormData) {
       travelCostStatus: (formData.get("travelCostStatus") as "paid" | "unpaid" | "onhold") || undefined,
       overallCost: (formData.get("overallCost") as string) || undefined,
       overallCostStatus: (formData.get("overallCostStatus") as "paid" | "unpaid" | "onhold") || undefined,
+      clusterCostOverride: (formData.get("clusterCostOverride") as string) || undefined,
       
       dopId: (formData.get("dopId") as string) || undefined,
       executorIds: formData.getAll("executorIds") as string[],
@@ -292,6 +296,7 @@ export async function updateShoot(id: string, formData: FormData) {
     const shootCostFloat = validatedData.shootCost ? parseFloat(validatedData.shootCost) : undefined;
     const travelCostFloat = validatedData.travelCost ? parseFloat(validatedData.travelCost) : undefined;
     const overallCostFloat = validatedData.overallCost ? parseFloat(validatedData.overallCost) : undefined;
+    const clusterCostOverrideFloat = validatedData.clusterCostOverride ? parseFloat(validatedData.clusterCostOverride) : undefined;
 
     // Update the shoot
     await db.shoot.update({
@@ -319,6 +324,7 @@ export async function updateShoot(id: string, formData: FormData) {
         travelCostStatus: validatedData.travelCostStatus,
         overallCost: overallCostFloat,
         overallCostStatus: validatedData.overallCostStatus,
+        clusterCostOverride: clusterCostOverrideFloat,
         dopId: validatedData.dopId,
       },
     });

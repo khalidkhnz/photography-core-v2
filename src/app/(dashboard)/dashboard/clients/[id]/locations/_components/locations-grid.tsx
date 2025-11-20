@@ -152,14 +152,21 @@ export function LocationsGrid({ locations }: LocationsGridProps) {
               )}
               
               {/* Location POCs */}
-              {location.pocs && location.pocs.length > 0 && (
-                <div className="space-y-2 pt-2 border-t">
+              <div className="space-y-2 pt-2 border-t">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <Users className="h-4 w-4" />
-                    <span>POCs ({location.pocs.length})</span>
+                    <span>POCs ({location.pocs?.length ?? 0})</span>
                   </div>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href={`/dashboard/locations/${location.id}/pocs`}>
+                      {location.pocs && location.pocs.length > 0 ? "Manage" : "Add"}
+                    </Link>
+                  </Button>
+                </div>
+                {location.pocs && location.pocs.length > 0 && (
                   <div className="space-y-1">
-                    {location.pocs.map((poc) => (
+                    {location.pocs.slice(0, 2).map((poc) => (
                       <div key={poc.id} className="text-xs p-2 bg-muted/50 rounded">
                         <p className="font-medium">{poc.name}</p>
                         {poc.role && (
@@ -171,9 +178,14 @@ export function LocationsGrid({ locations }: LocationsGridProps) {
                         </p>
                       </div>
                     ))}
+                    {location.pocs.length > 2 && (
+                      <p className="text-xs text-muted-foreground pt-1">
+                        +{location.pocs.length - 2} more
+                      </p>
+                    )}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
               
               <div className="text-muted-foreground text-xs pt-2">
                 Created {format(new Date(location.createdAt), "MMM dd, yyyy")}

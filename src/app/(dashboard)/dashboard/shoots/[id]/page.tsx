@@ -152,9 +152,11 @@ export default async function ViewShootPage({ params }: PageProps) {
                     <p className="text-sm font-medium">Edit IDs</p>
                     <div className="flex gap-1 flex-wrap">
                       {shoot.edits.map((edit) => (
-                        <Badge key={edit.id} variant="secondary">
-                          {edit.editId}
-                        </Badge>
+                        <Link key={edit.id} href={`/dashboard/edits/${edit.id}`}>
+                          <Badge variant="secondary" className="cursor-pointer hover:bg-secondary/80">
+                            {edit.editId}
+                          </Badge>
+                        </Link>
                       ))}
                     </div>
                   </div>
@@ -293,14 +295,32 @@ export default async function ViewShootPage({ params }: PageProps) {
           )}
 
           {/* Cost Tracking */}
-          {(shoot.shootCost !== null ||
-            shoot.travelCost !== null ||
-            shoot.overallCost !== null) && (
+          {(() => {
+            const shootWithOverride = extendedShoot as typeof extendedShoot & { clusterCostOverride?: number | null };
+            return (shoot.shootCost !== null ||
+              shoot.travelCost !== null ||
+              shoot.overallCost !== null ||
+              shootWithOverride.clusterCostOverride !== null);
+          })() && (
             <Card>
               <CardHeader>
                 <CardTitle>Cost Tracking</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {(() => {
+                  const shootWithOverride = extendedShoot as typeof extendedShoot & { clusterCostOverride?: number | null };
+                  return extendedShoot.workflowType === "cluster" && shootWithOverride.clusterCostOverride !== null ? (
+                    <div>
+                      <p className="text-sm font-medium">Manual Cost Override</p>
+                      <p className="text-2xl font-bold">
+                        ₹{(shootWithOverride.clusterCostOverride ?? 0).toFixed(2)}
+                      </p>
+                      <p className="text-muted-foreground text-xs mt-1">
+                        Overrides automatic cluster calculation
+                      </p>
+                    </div>
+                  ) : null;
+                })()}
                 {extendedShoot.workflowType === "project" ? (
                   <div>
                     <p className="text-sm font-medium">Overall Project Cost</p>

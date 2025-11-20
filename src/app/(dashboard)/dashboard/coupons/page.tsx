@@ -16,7 +16,7 @@ import {
   Copy,
   Calendar,
   Percent,
-  DollarSign,
+  IndianRupee,
   MoreHorizontal,
 } from "lucide-react";
 import Link from "next/link";
@@ -83,12 +83,12 @@ export default async function CouponsPage() {
                         {coupon.type === "percentage" ? (
                           <Percent className="h-4 w-4" />
                         ) : (
-                          <DollarSign className="h-4 w-4" />
+                          <IndianRupee className="h-4 w-4" />
                         )}
                         <span>
                           {coupon.type === "percentage"
                             ? `${coupon.value}% off`
-                            : `$${coupon.value} off`}
+                            : `₹${coupon.value} off`}
                         </span>
                       </div>
 
@@ -115,7 +115,7 @@ export default async function CouponsPage() {
 
                     {coupon.minAmount && coupon.minAmount > 0 && (
                       <p className="text-muted-foreground text-sm">
-                        Minimum order: ${coupon.minAmount}
+                        Minimum order: ₹{coupon.minAmount}
                       </p>
                     )}
                   </div>

@@ -35,6 +35,13 @@ export default async function ViewClusterPage({ params }: PageProps) {
 
   // Calculate total cost from shoots
   const calculatedShootsCost = (cluster.shoots ?? []).reduce((sum: number, shoot: ShootInCluster) => {
+    // Check for manual override first
+    const shootWithOverride = shoot as ShootInCluster & { clusterCostOverride?: number | null };
+    const clusterCostOverride = shootWithOverride.clusterCostOverride ?? null;
+    if (typeof clusterCostOverride === "number") {
+      return sum + clusterCostOverride;
+    }
+    
     // For shift-based: shootCost + travelCost, for project-based: overallCost
     const workflowType = shoot.workflowType ?? "shift";
     const shootCost = typeof shoot.shootCost === "number" ? shoot.shootCost : 0;
@@ -141,15 +148,24 @@ export default async function ViewClusterPage({ params }: PageProps) {
                   </TableHeader>
                   <TableBody>
                     {cluster.shoots.map((shoot: ShootInCluster) => {
-                      // For shift-based: shootCost + travelCost, for project-based: overallCost
-                      const workflowType = shoot.workflowType ?? "shift";
-                      const shootCost = typeof shoot.shootCost === "number" ? shoot.shootCost : 0;
-                      const travelCost = typeof shoot.travelCost === "number" ? shoot.travelCost : 0;
-                      const overallCost = typeof shoot.overallCost === "number" ? shoot.overallCost : 0;
+                      // Check for manual override first
+                      const shootWithOverride = shoot as ShootInCluster & { clusterCostOverride?: number | null };
+                      const clusterCostOverride = shootWithOverride.clusterCostOverride ?? null;
+                      let shootTotalCost: number;
                       
-                      const shootTotalCost = workflowType === "project"
-                        ? overallCost
-                        : shootCost + travelCost;
+                      if (typeof clusterCostOverride === "number") {
+                        shootTotalCost = clusterCostOverride;
+                      } else {
+                        // For shift-based: shootCost + travelCost, for project-based: overallCost
+                        const workflowType = shoot.workflowType ?? "shift";
+                        const shootCost = typeof shoot.shootCost === "number" ? shoot.shootCost : 0;
+                        const travelCost = typeof shoot.travelCost === "number" ? shoot.travelCost : 0;
+                        const overallCost = typeof shoot.overallCost === "number" ? shoot.overallCost : 0;
+                        
+                        shootTotalCost = workflowType === "project"
+                          ? overallCost
+                          : shootCost + travelCost;
+                      }
                       
                       const scheduledDate = shoot.scheduledShootDate 
                         ? new Date(shoot.scheduledShootDate as string | Date)

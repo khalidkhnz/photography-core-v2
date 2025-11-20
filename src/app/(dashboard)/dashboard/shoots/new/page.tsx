@@ -144,6 +144,7 @@ export default function CreateShootPage() {
       travelCostStatus: undefined,
       overallCost: "",
       overallCostStatus: undefined,
+      clusterCostOverride: "",
       dopId: "",
       executorIds: [],
       editIds: [],
@@ -291,6 +292,8 @@ export default function CreateShootPage() {
       } else if (data.workflowType === "project") {
         if (data.overallCost) formData.append("overallCost", data.overallCost);
         if (data.overallCostStatus) formData.append("overallCostStatus", data.overallCostStatus);
+      } else if (data.workflowType === "cluster") {
+        if (data.clusterCostOverride) formData.append("clusterCostOverride", data.clusterCostOverride);
       }
 
       // DOP and Executors
@@ -1178,10 +1181,31 @@ export default function CreateShootPage() {
                 )}
 
                 {selectedWorkflowType === "cluster" && (
-                  <div className="bg-muted rounded-md p-4 text-center">
-                    <p className="text-sm text-muted-foreground">
-                      Cost tracking for cluster shoots is managed at the cluster level
-                    </p>
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="clusterCostOverride"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Manual Cost Override (₹)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="e.g., 15000"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Override the automatic cost calculation. Leave empty to use auto-calculated costs from cluster totals.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="bg-muted rounded-md p-3 text-sm text-muted-foreground">
+                      If no override is set, costs will be automatically calculated at the cluster level.
+                    </div>
                   </div>
                 )}
               </CardContent>

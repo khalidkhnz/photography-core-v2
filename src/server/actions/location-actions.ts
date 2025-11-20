@@ -33,6 +33,26 @@ export async function createLocation(formData: FormData) {
       data: validatedData,
     });
 
+    // Create POC if data is provided
+    const pocName = formData.get("pocName") as string;
+    const pocPhone = formData.get("pocPhone") as string;
+    
+    if (pocName && pocPhone) {
+      const pocData: CreateLocationPOCFormData = {
+        name: pocName,
+        phone: pocPhone,
+        email: (formData.get("pocEmail") as string) || undefined,
+        role: (formData.get("pocRole") as string) || undefined,
+        locationId: location.id,
+      };
+
+      const validatedPOCData = createLocationPOCSchema.parse(pocData);
+
+      await db.locationPOC.create({
+        data: validatedPOCData,
+      });
+    }
+
     revalidatePath("/dashboard/clients");
     revalidatePath(`/dashboard/clients/${validatedData.clientId}`);
     revalidatePath(`/dashboard/clients/${validatedData.clientId}/locations`);

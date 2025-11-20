@@ -22,7 +22,7 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
-  DollarSign,
+  IndianRupee,
   Calendar,
   Filter,
   BarChart3,
@@ -198,7 +198,7 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-orange-600" />
+              <IndianRupee className="h-5 w-5 text-orange-600" />
               Unpaid/On-hold Shoots
             </CardTitle>
             <CardDescription>

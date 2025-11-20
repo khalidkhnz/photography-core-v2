@@ -35,6 +35,11 @@ const createLocationSchema = z.object({
   state: z.string().optional(),
   country: z.string().optional(),
   coordinates: z.string().optional(),
+  // Optional POC fields
+  pocName: z.string().optional(),
+  pocEmail: z.string().email("Invalid email").optional().or(z.literal("")),
+  pocPhone: z.string().optional(),
+  pocRole: z.string().optional(),
 });
 
 type CreateLocationFormData = z.infer<typeof createLocationSchema>;
@@ -57,6 +62,10 @@ export default function CreateLocationPage({ params }: PageProps) {
       state: "",
       country: "",
       coordinates: "",
+      pocName: "",
+      pocEmail: "",
+      pocPhone: "",
+      pocRole: "",
     },
   });
 
@@ -77,6 +86,12 @@ export default function CreateLocationPage({ params }: PageProps) {
       if (data.country) formData.append("country", data.country);
       if (data.coordinates) formData.append("coordinates", data.coordinates);
       formData.append("clientId", clientId);
+      
+      // Include POC data if provided
+      if (data.pocName) formData.append("pocName", data.pocName);
+      if (data.pocEmail) formData.append("pocEmail", data.pocEmail);
+      if (data.pocPhone) formData.append("pocPhone", data.pocPhone);
+      if (data.pocRole) formData.append("pocRole", data.pocRole);
 
       await createLocation(formData);
       void router.push(`/dashboard/clients/${clientId}?tab=locations`);
@@ -210,6 +225,78 @@ export default function CreateLocationPage({ params }: PageProps) {
                     <FormLabel>Coordinates</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g., 40.7128, -74.0060" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Point of Contact (Optional)</CardTitle>
+              <CardDescription>
+                Add an initial POC for this location (you can add more later)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="pocName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>POC Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., John Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="pocPhone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>POC Phone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., +1 234 567 8900" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="pocEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>POC Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="e.g., john@company.com"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="pocRole"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>POC Role</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Site Manager" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

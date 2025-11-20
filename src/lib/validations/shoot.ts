@@ -26,6 +26,7 @@ export const createShootSchema = z.object({
   travelCostStatus: z.enum(["paid", "unpaid", "onhold"]).optional(),
   overallCost: z.string().optional(), // For project-level shoots
   overallCostStatus: z.enum(["paid", "unpaid", "onhold"]).optional(),
+  clusterCostOverride: z.string().optional(), // Manual cost override for cluster shoots
   
   // DOP and Executors
   dopId: z.string().optional(), // Single DOP (Director of Photography)
@@ -61,6 +62,7 @@ export const updateShootSchema = z.object({
   travelCostStatus: z.enum(["paid", "unpaid", "onhold"]).optional(),
   overallCost: z.string().optional(),
   overallCostStatus: z.enum(["paid", "unpaid", "onhold"]).optional(),
+  clusterCostOverride: z.string().optional(),
   
   // DOP and Executors
   dopId: z.string().optional(),

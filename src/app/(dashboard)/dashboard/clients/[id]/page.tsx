@@ -234,28 +234,37 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {locations.map((location) => (
-                <Card key={location.id}>
+                <Card key={location.id} className="transition-shadow hover:shadow-md">
                   <CardHeader>
-                    <CardTitle className="text-lg">{location.name}</CardTitle>
-                    {location.address && (
-                      <CardDescription className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        {location.address}
-                      </CardDescription>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-muted-foreground">
-                        {location.city && location.state && (
-                          <span>{location.city}, {location.state}</span>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{location.name}</CardTitle>
+                        {location.address && (
+                          <CardDescription className="flex items-center gap-2 mt-1">
+                            <MapPin className="h-4 w-4" />
+                            {location.address}
+                          </CardDescription>
                         )}
                       </div>
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/dashboard/clients/${id}/locations/${location.id}/edit`}>
-                          <Edit className="h-4 w-4" />
-                        </Link>
-                      </Button>
+                      <div className="flex space-x-1">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link href={`/dashboard/locations/${location.id}`}>
+                            View
+                          </Link>
+                        </Button>
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link href={`/dashboard/locations/${location.id}/edit`}>
+                            <Edit className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-sm text-muted-foreground">
+                      {location.city && location.state && (
+                        <span>{location.city}, {location.state}</span>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

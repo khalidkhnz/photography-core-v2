@@ -140,6 +140,7 @@ export default function EditShootPage() {
       travelCostStatus: undefined,
       overallCost: "",
       overallCostStatus: undefined,
+      clusterCostOverride: "",
       dopId: "",
       executorIds: [],
       editIds: [],
@@ -208,6 +209,10 @@ export default function EditShootPage() {
           travelCostStatus: shootData.travelCostStatus as "paid" | "unpaid" | "onhold" | undefined,
           overallCost: shootData.overallCost ? shootData.overallCost.toString() : "",
           overallCostStatus: shootData.overallCostStatus as "paid" | "unpaid" | "onhold" | undefined,
+          clusterCostOverride: (() => {
+            const extendedShoot = shootData as typeof shootData & { clusterCostOverride?: number | null };
+            return extendedShoot.clusterCostOverride ? extendedShoot.clusterCostOverride.toString() : "";
+          })(),
           dopId: shootData.dopId ?? "",
           executorIds: shootData.executors?.map((e) => e.user.id) ?? [],
           editIds: shootData.edits?.map((e) => e.id) ?? [],
@@ -326,6 +331,8 @@ export default function EditShootPage() {
       if (data.workflowType === "project") {
         if (data.overallCost) formData.append("overallCost", data.overallCost);
         if (data.overallCostStatus) formData.append("overallCostStatus", data.overallCostStatus);
+      } else if (data.workflowType === "cluster") {
+        if (data.clusterCostOverride) formData.append("clusterCostOverride", data.clusterCostOverride);
       } else {
         if (data.shootCost) formData.append("shootCost", data.shootCost);
         if (data.travelCost) formData.append("travelCost", data.travelCost);
@@ -804,6 +811,35 @@ export default function EditShootPage() {
                     />
                   </div>
                 </>
+              )}
+              
+              {selectedWorkflowType === "cluster" && (
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="clusterCostOverride"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Manual Cost Override (₹)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="e.g., 15000"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Override the automatic cost calculation. Leave empty to use auto-calculated costs from cluster totals.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="bg-muted rounded-md p-3 text-sm text-muted-foreground">
+                    If no override is set, costs will be automatically calculated at the cluster level.
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>
