@@ -66,10 +66,10 @@ export const updateShootSchema = z.object({
   
   // DOP and Executors
   dopId: z.string().optional().or(z.literal("")),
-  executorIds: z.array(z.string()).optional().default([]),
+  executorIds: z.array(z.string()),
   
   // Edit IDs
-  editIds: z.array(z.string()).optional().default([]),
+  editIds: z.array(z.string()),
 });
 
 export const createEditSchema = z.object({
@@ -110,6 +110,7 @@ export const updateClusterSchema = z.object({
   totalCost: z.string().optional(),
 });
 
+// Type exports
 export type CreateShootFormData = z.infer<typeof createShootSchema>;
 export type UpdateShootFormData = z.infer<typeof updateShootSchema>;
 export type CreateEditFormData = z.infer<typeof createEditSchema>;

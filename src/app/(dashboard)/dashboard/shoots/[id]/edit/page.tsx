@@ -16,6 +16,7 @@ import {
   updateShootSchema,
   type UpdateShootFormData,
 } from "@/lib/validations/shoot";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -418,7 +419,7 @@ export default function EditShootPage() {
           const errorMessages = Object.entries(errors)
             .map(([field, error]) => {
               const fieldName = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-              return `${fieldName}: ${error?.message || 'Invalid value'}`;
+              return `${fieldName}: ${error?.message ?? 'Invalid value'}`;
             })
             .join('\n');
           
@@ -441,7 +442,7 @@ export default function EditShootPage() {
                     const fieldName = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
                     return (
                       <li key={field}>
-                        <strong>{fieldName}:</strong> {error?.message || 'This field is invalid'}
+                        <strong>{fieldName}:</strong> {error?.message ?? 'This field is invalid'}
                       </li>
                     );
                   })}
@@ -759,7 +760,7 @@ export default function EditShootPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Payment Status</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select status" />
@@ -815,7 +816,7 @@ export default function EditShootPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Shoot Payment Status</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select status" />
@@ -838,7 +839,7 @@ export default function EditShootPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Travel Payment Status</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select status" />
